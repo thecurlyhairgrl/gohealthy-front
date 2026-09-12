@@ -5,7 +5,7 @@ description: Crea la estructura de carpetas y archivos base para una nueva featu
 
 # Scaffold de una feature nueva
 
-Esta skill crea el esqueleto de una feature dentro de `src/features/<nombre>/`, siguiendo la convención documentada en [docs/frontend/README.md](../../../docs/frontend/README.md#estructura-de-carpetas) y en [AGENTS.md](../../../AGENTS.md).
+Esta skill crea el esqueleto de una feature dentro de `src/features/<nombre>/`, siguiendo la convención documentada en la estructura del proyecto y en [AGENTS.md](../../../AGENTS.md).
 
 ## Cuándo usarla
 
