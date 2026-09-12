@@ -1,0 +1,1 @@
+Aqui va la explicacion inicial sobre la arquitectura
