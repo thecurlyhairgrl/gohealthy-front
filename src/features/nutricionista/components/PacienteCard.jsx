@@ -31,8 +31,16 @@ function PacienteCard({ paciente, onClick }) {
 
   return (
     <Card
-      className="cursor-pointer transition-shadow hover:shadow-lg"
+      className="cursor-pointer transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      role="button"
+      tabIndex={0}
       onClick={() => onClick?.(paciente)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onClick?.(paciente)
+        }
+      }}
     >
       <CardHeader>
         <div className="flex items-start justify-between">

@@ -12,6 +12,7 @@ function BuscadorPacientes({ valor, onChange }) {
       <Input
         id="buscador-pacientes"
         type="text"
+        aria-label="Buscar pacientes"
         placeholder="Buscar paciente..."
         value={valor}
         onChange={(e) => onChange(e.target.value)}
