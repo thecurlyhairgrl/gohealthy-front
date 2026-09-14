@@ -1,0 +1,80 @@
+
+Base Code *NO COPIAR IGUAL, SOLO USAR COMO REFERENCIA*
+<div style={{width: '100%', height: '100%', position: 'relative', background: '#EFEBE7', overflow: 'hidden'}}>
+    <div style={{width: 1440, height: 564, left: 0, top: 0, position: 'absolute', background: 'linear-gradient(180deg, #C7CBA6 0%, #EFEBE7 100%)'}} />
+    <div style={{width: 277, height: 56, left: 833, top: 41, position: 'absolute', background: '#C7CBA6', borderRadius: 24, border: '3px #2F6B4E solid'}} />
+    <div style={{width: 277, height: 56, left: 88, top: 705, position: 'absolute', background: '#2F6B4E', borderRadius: 13}} />
+    <div style={{width: 119, height: 56, left: 386, top: 705, position: 'absolute', background: '#38461E', borderRadius: 13}} />
+    <div style={{width: 277, height: 56, left: 1131, top: 37, position: 'absolute', background: '#2F6B4E', borderRadius: 24}} />
+    <div style={{width: 710, left: 91, top: 259, position: 'absolute'}}><span style="color: '#1C1C1C', fontSize: 64, fontFamily: 'Sora', fontWeight: '400', wordWrap: 'break-word'">Lorem ipsum dolor sit amet consectetur. </span><span style="color: '#2F6B4E', fontSize: 64, fontFamily: 'Sora', fontWeight: '400', wordWrap: 'break-word'">Aliquam pretium sed duis id. </span></div>
+    <div style={{width: 710, left: 91, top: 607, position: 'absolute', color: '#1C1C1C', fontSize: 24, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Lorem ipsum dolor sit amet consectetur. Semper porta pharetra urna dictum.</div>
+    <div style={{width: 1440, height: 498, left: 0, top: 989, position: 'absolute', background: '#ABB748'}} />
+    <div style={{width: 1440, height: 641, left: 0, top: 1487, position: 'absolute', background: '#D8DBBD'}} />
+    <div style={{width: 1258, left: 91, top: 1124, position: 'absolute', textAlign: 'center', color: '#38461E', fontSize: 64, fontFamily: 'Sora', fontWeight: '600', wordWrap: 'break-word'}}>LOREM IPSUM DOLOR SIT AMET CONSECTETUR. SCELERISQUE AC AC  NASCETUR VIVAMUS.</div>
+    <div style={{width: 348, height: 550.37, left: 102, top: 2712, position: 'absolute', background: '#D6D0CB', borderRadius: 22.70}} />
+    <div style={{width: 347.13, height: 549, left: 1010, top: 2712, position: 'absolute', background: '#D6D0CB', borderRadius: 22.64}} />
+    <div style={{width: 390.13, height: 617, left: 533, top: 2678, position: 'absolute', background: '#D6D0CB', borderRadius: 25.44}} />
+    <div style={{width: 131, height: 61.65, left: 662, top: 3200, position: 'absolute', borderRadius: 42, border: '4px #1C1C1C solid'}} />
+    <div style={{width: 131, height: 61.65, left: 1118, top: 3169, position: 'absolute', borderRadius: 42, border: '4px #1C1C1C solid'}} />
+    <div style={{width: 131, height: 61.65, left: 210, top: 3169, position: 'absolute', borderRadius: 42, border: '4px #1C1C1C solid'}} />
+    <div style={{width: 1258, left: 91, top: 1557, position: 'absolute', textAlign: 'center', color: '#38461E', fontSize: 64, fontFamily: 'Sora', fontWeight: '400', wordWrap: 'break-word'}}>Lorem ipsum dolor sit amet consectetur. Aliquam pretium sed id. </div>
+    <div style={{width: 321, left: 124, top: 1808, position: 'absolute', textAlign: 'center', color: '#38461E', fontSize: 32, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Lorem ipsum dolor sit amet consectetur. Arcu scelerisque ultricies euismod dictumst </div>
+    <div style={{width: 321, left: 994, top: 1808, position: 'absolute', textAlign: 'center', color: '#38461E', fontSize: 32, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Lorem ipsum dolor sit amet consectetur. Arcu scelerisque ultricies euismod dictumst </div>
+    <div style={{width: 321, left: 559, top: 1808, position: 'absolute', textAlign: 'center', color: '#38461E', fontSize: 32, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Lorem ipsum dolor sit amet consectetur. Arcu scelerisque ultricies euismod dictumst </div>
+    <div style={{width: 569, height: 304, left: 94, top: 2233, position: 'absolute', background: '#2F6B4E', borderRadius: 30}} />
+    <div style={{width: 75, height: 75, left: 341, top: 2347, position: 'absolute', background: '#A8A5A5', borderRadius: 9999}} />
+    <div style={{width: 528, left: 730, top: 2319, position: 'absolute', textAlign: 'center', color: '#1C1C1C', fontSize: 36, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Lorem ipsum dolor sit amet consectetur. Aliquam pretium sed duis id. </div>
+    <div style={{width: 1440, height: 192, left: 0, top: 3499, position: 'absolute', background: '#38461E'}} />
+    <div style={{width: 254, left: 91, top: 3525, position: 'absolute', textAlign: 'center', color: '#EFEBE7', fontSize: 20, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Lorem ipsum dolor sit amet consectetur. Sed elementum aliquam scelerisque leo dolor.</div>
+    <div style={{width: 345, left: 548, top: 3525, position: 'absolute', textAlign: 'center', color: '#EFEBE7', fontSize: 20, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Lorem ipsum dolor sit amet consectetur. Proin pulvinar varius diam morbi adipiscing amet vulputate quisque vitae. </div>
+    <div style={{width: 253, left: 1095, top: 3525, position: 'absolute', textAlign: 'center', color: '#EFEBE7', fontSize: 20, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Proin pulvinar varius diam morbi adipiscing amet vulputate quisque vitae. </div>
+    <div style={{width: 292, left: 584, top: 2811, position: 'absolute', textAlign: 'center', color: '#38461E', fontSize: 36, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Crypto ipsum bitcoin ethereum dogecoin litecoin.</div>
+    <div style={{width: 234, left: 1067, top: 2839, position: 'absolute', textAlign: 'center', color: '#38461E', fontSize: 32, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Crypto ipsum bitcoin ethereum dogecoin litecoin.</div>
+    <div style={{width: 234, left: 160, top: 2839, position: 'absolute', textAlign: 'center', color: '#38461E', fontSize: 32, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'}}>Crypto ipsum bitcoin ethereum dogecoin litecoin.</div>
+</div>
+
+Estilos de texto
+// Lorem ipsum dolor sit amet consectetur. 
+color: '#1C1C1C', fontSize: 64, fontFamily: 'Sora', fontWeight: '400', wordWrap: 'break-word'
+---
+// Aliquam pretium sed duis id. 
+color: '#2F6B4E', fontSize: 64, fontFamily: 'Sora', fontWeight: '400', wordWrap: 'break-word'
+---
+// Lorem ipsum dolor sit amet consectetur. Semper porta pharetra urna dictum.
+color: '#1C1C1C', fontSize: 24, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
+---
+// LOREM IPSUM DOLOR SIT AMET CONSECTETUR. SCELERISQUE AC AC  NASCETUR VIVAMUS.
+color: '#38461E', fontSize: 64, fontFamily: 'Sora', fontWeight: '600', wordWrap: 'break-word'
+---
+// Lorem ipsum dolor sit amet consectetur. Aliquam pretium sed id. 
+color: '#38461E', fontSize: 64, fontFamily: 'Sora', fontWeight: '400', wordWrap: 'break-word'
+---
+// Lorem ipsum dolor sit amet consectetur. Arcu scelerisque ultricies euismod dictumst 
+color: '#38461E', fontSize: 32, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
+---
+// Lorem ipsum dolor sit amet consectetur. Arcu scelerisque ultricies euismod dictumst 
+color: '#38461E', fontSize: 32, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
+---
+// Lorem ipsum dolor sit amet consectetur. Arcu scelerisque ultricies euismod dictumst 
+color: '#38461E', fontSize: 32, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
+---
+// Lorem ipsum dolor sit amet consectetur. Aliquam pretium sed duis id. 
+color: '#1C1C1C', fontSize: 36, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
+---
+// Lorem ipsum dolor sit amet consectetur. Sed elementum aliquam scelerisque leo dolor.
+color: '#EFEBE7', fontSize: 20, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
+---
+// Lorem ipsum dolor sit amet consectetur. Proin pulvinar varius diam morbi adipiscing amet vulputate quisque vitae. 
+color: '#EFEBE7', fontSize: 20, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
+---
+// Proin pulvinar varius diam morbi adipiscing amet vulputate quisque vitae. 
+color: '#EFEBE7', fontSize: 20, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
+---
+// Crypto ipsum bitcoin ethereum dogecoin litecoin.
+color: '#38461E', fontSize: 36, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
+---
+// Crypto ipsum bitcoin ethereum dogecoin litecoin.
+color: '#38461E', fontSize: 32, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
+---
+// Crypto ipsum bitcoin ethereum dogecoin litecoin.
+color: '#38461E', fontSize: 32, fontFamily: 'IBM Plex Sans', fontWeight: '400', wordWrap: 'break-word'
