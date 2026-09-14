@@ -4,7 +4,19 @@
 export const nutriologoMock = {
   id: 1,
   nombre: 'Carlos Mendoza',
-  especialidad: 'Nutrición deportiva',
+  nombres: 'Carlos',
+  apellidos: 'Mendoza Rivera',
+  especialidad: 'Nutrición Clínica y Deportiva',
+  cedula: '12345678',
+  email: 'carlos.mendoza@gohealthy.com',
+  telefono: '+52 55 1234 5678',
+  sexo: 'Masculino',
+  fechaNacimiento: '1988-04-15',
+  universidad: 'Universidad Nacional Autónoma de México (UNAM)',
+  consultorio: 'Av. Insurgentes Sur 1450, Col. Actipan, Benito Juárez, CDMX',
+  biografia: 'Nutriólogo clínico y deportivo con más de 8 años de experiencia en recomposición corporal, nutrición para atletas de alto rendimiento y control metabólico de pacientes con diabetes e hipertensión.',
+  avatarUrl: null,
+  fechaRegistro: 'Enero 2025',
 }
 
 export const pacientesMock = [
