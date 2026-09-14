@@ -315,3 +315,164 @@ export const citasCalendarioMock = [
   },
 ]
 
+export const conversacionesMock = [
+  {
+    pacienteId: 1,
+    ultimoMensaje: '¡Muchas gracias, Dr.! Ya compré los ingredientes para la dieta.',
+    fechaHoraUltimoMensaje: '10:45 AM',
+    mensajes: [
+      {
+        id: 1,
+        remitente: 'paciente',
+        texto: 'Hola Dr. Carlos, buen día. ¿La avena del desayuno puede ser integral o tradicional?',
+        hora: '10:15 AM',
+      },
+      {
+        id: 2,
+        remitente: 'nutriologo',
+        texto: '¡Hola Ana! De preferencia en hojuelas integrales naturales, sin azúcares añadidos ni saborizantes.',
+        hora: '10:30 AM',
+      },
+      {
+        id: 3,
+        remitente: 'paciente',
+        texto: '¡Muchas gracias, Dr.! Ya compré los ingredientes para la dieta.',
+        hora: '10:45 AM',
+      },
+    ],
+  },
+  {
+    pacienteId: 2,
+    ultimoMensaje: 'Perfecto, nos vemos el lunes a las 11:30 en el consultorio.',
+    fechaHoraUltimoMensaje: 'Ayer',
+    mensajes: [
+      {
+        id: 1,
+        remitente: 'paciente',
+        texto: 'Buenas tardes Dr., ¿sería posible mover mi cita del lunes a las 11:30 AM?',
+        hora: '04:10 PM',
+      },
+      {
+        id: 2,
+        remitente: 'nutriologo',
+        texto: 'Hola Roberto, claro que sí. Ya quedó actualizado en el calendario para las 11:30.',
+        hora: '04:25 PM',
+      },
+      {
+        id: 3,
+        remitente: 'paciente',
+        texto: 'Perfecto, nos vemos el lunes a las 11:30 en el consultorio.',
+        hora: '04:30 PM',
+      },
+    ],
+  },
+  {
+    pacienteId: 3,
+    ultimoMensaje: 'Le envié por aquí mis registros de glucosa de la semana.',
+    fechaHoraUltimoMensaje: '09:20 AM',
+    mensajes: [
+      {
+        id: 1,
+        remitente: 'paciente',
+        texto: 'Buenos días Dr. Carlos, amanecí con 98 mg/dL en ayunas.',
+        hora: '09:05 AM',
+      },
+      {
+        id: 2,
+        remitente: 'nutriologo',
+        texto: '¡Excelente nivel, María! Los ajustes en la cena están dando muy buenos resultados.',
+        hora: '09:12 AM',
+      },
+      {
+        id: 3,
+        remitente: 'paciente',
+        texto: 'Le envié por aquí mis registros de glucosa de la semana.',
+        hora: '09:20 AM',
+      },
+    ],
+  },
+  {
+    pacienteId: 4,
+    ultimoMensaje: 'Entendido, lo tomaré 30 minutos antes de entrenar.',
+    fechaHoraUltimoMensaje: '12 Sep',
+    mensajes: [
+      {
+        id: 1,
+        remitente: 'paciente',
+        texto: 'Hola Dr., ¿la creatina la tomo antes o después del entrenamiento?',
+        hora: '03:00 PM',
+      },
+      {
+        id: 2,
+        remitente: 'nutriologo',
+        texto: 'Hola Luis. Lo más importante es la constancia diaria, pero tomarla 30 min antes o justo después con algo de carbohidratos funciona muy bien.',
+        hora: '03:15 PM',
+      },
+      {
+        id: 3,
+        remitente: 'paciente',
+        texto: 'Entendido, lo tomaré 30 minutos antes de entrenar.',
+        hora: '03:22 PM',
+      },
+    ],
+  },
+  {
+    pacienteId: 5,
+    ultimoMensaje: 'Hola Dr., ¿el té verde cuenta para los 2 litros de agua al día?',
+    fechaHoraUltimoMensaje: '11 Sep',
+    mensajes: [
+      {
+        id: 1,
+        remitente: 'paciente',
+        texto: 'Hola Dr., ¿el té verde cuenta para los 2 litros de agua al día?',
+        hora: '11:00 AM',
+      },
+      {
+        id: 2,
+        remitente: 'nutriologo',
+        texto: 'Hola Sofía, sí cuenta para la hidratación general, siempre y cuando no le agregues azúcar. Recuerda que al menos 1.5L sea agua natural.',
+        hora: '11:20 AM',
+      },
+    ],
+  },
+  {
+    pacienteId: 6,
+    ultimoMensaje: '¡Me he sentido con mucha más energía en las mañanas!',
+    fechaHoraUltimoMensaje: '10 Sep',
+    mensajes: [
+      {
+        id: 1,
+        remitente: 'paciente',
+        texto: '¡Me he sentido con mucha más energía en las mañanas!',
+        hora: '08:45 AM',
+      },
+    ],
+  },
+  {
+    pacienteId: 7,
+    ultimoMensaje: 'Sin mensajes previos',
+    fechaHoraUltimoMensaje: '',
+    mensajes: [],
+  },
+  {
+    pacienteId: 8,
+    ultimoMensaje: 'Buenas tardes Dr., ya tengo listos mis análisis de laboratorio.',
+    fechaHoraUltimoMensaje: '08 Sep',
+    mensajes: [
+      {
+        id: 1,
+        remitente: 'paciente',
+        texto: 'Buenas tardes Dr., ya tengo listos mis análisis de laboratorio.',
+        hora: '02:15 PM',
+      },
+      {
+        id: 2,
+        remitente: 'nutriologo',
+        texto: 'Excelente Andrés, tráelos a nuestra próxima consulta para revisarlos juntos.',
+        hora: '02:40 PM',
+      },
+    ],
+  },
+]
+
+

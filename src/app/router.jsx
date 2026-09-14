@@ -6,6 +6,7 @@ import NotFoundPage from '@/pages/NotFoundPage'
 import NutricionistaDashboardPage from '@/pages/nutricionista/NutricionistaDashboardPage'
 import { NutricionistaCalendarioPage } from '@/pages/nutricionista/NutricionistaCalendarioPage'
 import { NutricionistaPerfilPage } from '@/pages/nutricionista/NutricionistaPerfilPage'
+import { NutricionistaChatPage } from '@/pages/nutricionista/NutricionistaChatPage'
 
 // Rutas de la app. Al agregar una nueva pantalla: crear la página en
 // src/pages/<area>/NombrePage.jsx y declarar aquí su ruta apuntando a ella.
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: 'dashboard', element: <NutricionistaDashboardPage /> },
       { path: 'calendario', element: <NutricionistaCalendarioPage /> },
       { path: 'perfil', element: <NutricionistaPerfilPage /> },
+      { path: 'chat', element: <NutricionistaChatPage /> },
     ],
   },
 ])
