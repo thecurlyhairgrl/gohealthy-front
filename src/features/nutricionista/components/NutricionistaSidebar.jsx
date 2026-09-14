@@ -23,6 +23,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { nutriologoMock } from '@/features/nutricionista/data/mock-data'
+import logoGoHealthy from '@/assets/GoHealthyLogo.png'
 
 // Links de navegación del sidebar del nutriólogo.
 const navItems = [
@@ -59,7 +60,7 @@ function NutricionistaSidebar() {
   const { state, toggleSidebar } = useSidebar()
 
   return (
-    <Sidebar variant="floating" collapsible="icon" className="relative">
+    <Sidebar variant="floating" collapsible="icon">
       {/* Botón circular de colapso/expansión flotante en el borde derecho (estilo píldora) */}
       <button
         type="button"
@@ -80,15 +81,17 @@ function NutricionistaSidebar() {
 
       {/* Header: Logo y marca */}
       <SidebarHeader className="p-3">
-        <div className="flex items-center gap-2 overflow-hidden group-data-[collapsible=icon]:justify-center">
+        <div className="flex items-center gap-2.5 overflow-hidden group-data-[collapsible=icon]:justify-center">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold shadow-xs">
             <Heart className="size-4" />
           </div>
           <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-            <p className="truncate text-sm font-semibold text-foreground">
-              GoHealthy
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
+            <img
+              src={logoGoHealthy}
+              alt="GoHealthy"
+              className="h-5 w-auto object-contain"
+            />
+            <p className="truncate text-xs text-muted-foreground mt-0.5">
               Dr. {nutriologoMock.nombre}
             </p>
           </div>
