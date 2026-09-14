@@ -1,7 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import RootLayout from '@/app/layouts/RootLayout'
 import NutricionistaLayout from '@/app/layouts/NutricionistaLayout'
-import HomePage from '@/pages/HomePage'
+import LandingPage from '@/pages/landing/LandingPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import NutricionistaDashboardPage from '@/pages/nutricionista/NutricionistaDashboardPage'
 import { NutricionistaCalendarioPage } from '@/pages/nutricionista/NutricionistaCalendarioPage'
@@ -18,7 +18,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: <RootLayout />,
     children: [
-      { index: true, element: <HomePage /> },
+      { index: true, element: <LandingPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
