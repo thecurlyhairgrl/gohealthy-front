@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import RootLayout from '@/app/layouts/RootLayout'
 import NutricionistaLayout from '@/app/layouts/NutricionistaLayout'
+import PacienteLayout from '@/app/layouts/PacienteLayout'
 import HomePage from '@/pages/HomePage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import NutricionistaDashboardPage from '@/pages/nutricionista/NutricionistaDashboardPage'
@@ -8,6 +9,8 @@ import { NutricionistaCalendarioPage } from '@/pages/nutricionista/Nutricionista
 import { NutricionistaPerfilPage } from '@/pages/nutricionista/NutricionistaPerfilPage'
 import { NutricionistaChatPage } from '@/pages/nutricionista/NutricionistaChatPage'
 import { NutricionistaPacienteDetallePage } from '@/pages/nutricionista/NutricionistaPacienteDetallePage'
+import PacientePlaceholderPage from '@/pages/paciente/PacientePlaceholderPage'
+import PacientePlanAlimenticioPage from '@/pages/paciente/PacientePlanAlimenticioPage'
 
 // Rutas de la app. Al agregar una nueva pantalla: crear la página en
 // src/pages/<area>/NombrePage.jsx y declarar aquí su ruta apuntando a ella.
@@ -34,4 +37,18 @@ export const router = createBrowserRouter([
       { path: 'pacientes/:id', element: <NutricionistaPacienteDetallePage /> },
     ],
   },
+  {
+    path: '/paciente',
+    element: <PacienteLayout />,
+    children: [
+      { index: true, element: <Navigate to="plan-alimenticio" replace /> },
+      // Rutas placeholder — se reemplazarán por sus páginas reales en specs individuales
+      { path: 'plan-alimenticio', element: <PacientePlanAlimenticioPage /> },
+      { path: 'cumplimiento', element: <PacientePlaceholderPage titulo="Cumplimiento de Actividades" /> },
+      { path: 'cuestionarios', element: <PacientePlaceholderPage titulo="Cuestionarios" /> },
+      { path: 'progreso', element: <PacientePlaceholderPage titulo="Progreso" /> },
+      { path: 'chat', element: <PacientePlaceholderPage titulo="Chat" /> },
+    ],
+  },
 ])
+
