@@ -1,23 +1,32 @@
 import { Outlet } from 'react-router-dom'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import NutricionistaSidebar from '@/features/nutricionista/components/NutricionistaSidebar'
+import { Heart } from 'lucide-react'
 
-// Layout compartido por todas las rutas del nutriólogo (/nutriologo/*).
-// Envuelve el contenido con el SidebarProvider de shadcn y renderiza el
-// sidebar específico del nutriólogo a la izquierda.
+/**
+ * Layout compartido para las páginas del nutriólogo (/nutriologo/*).
+ * Integra el Sidebar flotante/colapsable y el área principal de contenido.
+ */
 function NutricionistaLayout() {
   return (
     <SidebarProvider>
       <NutricionistaSidebar />
-      <SidebarInset>
-        {/* Botón hamburguesa para abrir/cerrar el sidebar (visible en mobile
-            y cuando el sidebar está colapsado en desktop). */}
-        <header className="flex h-14 items-center gap-2 border-b px-4 md:px-6">
-          <SidebarTrigger />
+      <SidebarInset className="min-h-svh bg-background">
+        {/* Cabecera solo en móviles para abrir el menú offcanvas */}
+        <header className="flex md:hidden h-14 items-center justify-between border-b border-border/60 px-4 bg-card/80 backdrop-blur-xs sticky top-0 z-10">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <span className="font-heading font-semibold text-sm">GoHealthy</span>
+          </div>
+          <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Heart className="size-3.5" />
+          </div>
         </header>
-        <div className="flex-1 overflow-auto p-4 md:p-6">
+
+        {/* Contenido de la página */}
+        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
           <Outlet />
-        </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )
