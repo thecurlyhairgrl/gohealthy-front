@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { UserPlus } from 'lucide-react'
 import CitasDelDia from '@/features/nutricionista/components/CitasDelDia'
@@ -16,6 +17,7 @@ import {
  * un botón para registrar pacientes y un grid de tarjetas de pacientes.
  */
 function NutricionistaDashboardPage() {
+  const navigate = useNavigate()
   const [busqueda, setBusqueda] = useState('')
 
   // Filtra pacientes por nombre en tiempo real
@@ -36,8 +38,7 @@ function NutricionistaDashboardPage() {
   })
 
   const handleClickPaciente = (paciente) => {
-    // TODO: Navegar al detalle del paciente cuando exista la ruta
-    console.log('Paciente seleccionado:', paciente)
+    navigate(`/nutriologo/pacientes/${paciente.id}`)
   }
 
   const handleRegistrarPaciente = () => {
