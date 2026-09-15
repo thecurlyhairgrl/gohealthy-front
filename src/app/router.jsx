@@ -13,6 +13,7 @@ import PacientePlaceholderPage from '@/pages/paciente/PacientePlaceholderPage'
 import PacientePlanAlimenticioPage from '@/pages/paciente/PacientePlanAlimenticioPage'
 import PacienteChatPage from '@/pages/paciente/PacienteChatPage'
 import PacienteProgresoPage from '@/pages/paciente/PacienteProgresoPage'
+import PacienteCuestionariosPage from '@/pages/paciente/PacienteCuestionariosPage'
 
 // Rutas de la app. Al agregar una nueva pantalla: crear la página en
 // src/pages/<area>/NombrePage.jsx y declarar aquí su ruta apuntando a ella.
@@ -47,7 +48,7 @@ export const router = createBrowserRouter([
       // Rutas placeholder — se reemplazarán por sus páginas reales en specs individuales
       { path: 'plan-alimenticio', element: <PacientePlanAlimenticioPage /> },
       { path: 'cumplimiento', element: <PacientePlaceholderPage titulo="Cumplimiento de Actividades" /> },
-      { path: 'cuestionarios', element: <PacientePlaceholderPage titulo="Cuestionarios" /> },
+      { path: 'cuestionarios', element: <PacienteCuestionariosPage /> },
       { path: 'progreso', element: <PacienteProgresoPage /> },
       { path: 'chat', element: <PacienteChatPage /> },
     ],

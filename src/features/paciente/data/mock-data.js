@@ -89,3 +89,83 @@ export const progresoPacienteMock = {
   ],
 }
 
+// Cuestionarios de seguimiento para el paciente (Psicológico y Alimenticio)
+export const cuestionariosPacienteMock = {
+  psicologico: {
+    id: 'psicologico',
+    titulo: 'Cuestionario Psicológico y Bienestar',
+    descripcion: 'Monitorea tu relación con la comida, estrés, niveles de energía y motivación durante tu proceso.',
+    tiempoMinutos: 3,
+    preguntas: [
+      {
+        id: 'p1',
+        numero: 1,
+        pregunta: '¿Con qué frecuencia experimentas deseos de comer motivados por estrés, aburrimiento o ansiedad en lugar de hambre física?',
+        opciones: ['Nunca o casi nunca', 'Raras veces (1-2 veces por semana)', 'Frecuentemente (3-4 veces)', 'Casi todos los días'],
+      },
+      {
+        id: 'p2',
+        numero: 2,
+        pregunta: '¿Cómo describirías tu nivel de energía y estado de ánimo general a lo largo de esta semana?',
+        opciones: ['Excelente y constante', 'Bueno con altibajos normales', 'Regular, me siento cansado(a)', 'Bajo, con poca motivación'],
+      },
+      {
+        id: 'p3',
+        numero: 3,
+        pregunta: '¿Qué tanto estrés o presión te genera seguir las porciones y horarios del plan alimenticio?',
+        opciones: ['Ningún estrés, es muy fácil de llevar', 'Estrés leve o manejable', 'Moderado, me cuesta organizarme', 'Mucho estrés o frustración'],
+      },
+      {
+        id: 'p4',
+        numero: 4,
+        pregunta: 'Cuando enfrentas un día emocionalmente pesado, ¿cómo reaccionas respecto a tu alimentación?',
+        opciones: ['Mantengo mi plan sin problemas', 'Como un poco más de lo habitual', 'Busco alimentos dulces o ultraprocesados', 'Pierdo el apetito por completo'],
+      },
+      {
+        id: 'p5',
+        numero: 5,
+        pregunta: '¿Qué tan motivado(a) y satisfecho(a) te sientes con los cambios físicos y emocionales experimentados hasta hoy?',
+        opciones: ['Muy motivado(a) y satisfecho(a)', 'Satisfecho(a), voy a buen ritmo', 'Poco satisfecho(a), esperaba más', 'Desmotivado(a)'],
+      },
+    ],
+  },
+  alimenticio: {
+    id: 'alimenticio',
+    titulo: 'Cuestionario Alimenticio y Hábitos',
+    descripcion: 'Evalúa tu saciedad, preferencias de alimentos y practicidad en la preparación de platillos recomendados.',
+    tiempoMinutos: 3,
+    preguntas: [
+      {
+        id: 'a1',
+        numero: 1,
+        pregunta: '¿Cómo calificarías tu nivel de saciedad después de las comidas principales?',
+        opciones: ['Quedo perfectamente satisfecho(a)', 'Quedo bien, pero con antojo ligero', 'Siento que me quedo con hambre', 'Quedo demasiado lleno(a)'],
+      },
+      {
+        id: 'a2',
+        numero: 2,
+        pregunta: '¿Qué tan atractivos y apetecibles te resultan los platillos e ingredientes recomendados en tu plan?',
+        opciones: ['Me encantan todos los platillos', 'La mayoría me gustan', 'Algunos no son de mi agrado', 'Me cuesta mucho tolerar las comidas'],
+      },
+      {
+        id: 'a3',
+        numero: 3,
+        pregunta: '¿En qué momento del día sueles experimentar mayor apetito o dificultad para controlar porciones?',
+        opciones: ['Por la mañana (Desayuno)', 'A media mañana (Colación 1)', 'Por la tarde (Comida/Colación 2)', 'Por la noche (Cena)'],
+      },
+      {
+        id: 'a4',
+        numero: 4,
+        pregunta: 'Si has consumido alimentos adicionales a los marcados en tu plan, ¿cuáles han sido con mayor frecuencia?',
+        opciones: ['No he comido nada fuera del plan', 'Frutas, nueces o semillas extras', 'Pan dulce, galletas o botanas saladas', 'Bebidas azucaradas o alcohol'],
+      },
+      {
+        id: 'a5',
+        numero: 5,
+        pregunta: '¿Qué tan práctica te ha parecido la preparación de tus comidas en tu día a día?',
+        opciones: ['Muy práctica y rápida', 'Manejable con algo de planeación', 'Complicada por falta de tiempo', 'Muy difícil de compaginar con mi trabajo/estudio'],
+      },
+    ],
+  },
+}
+
