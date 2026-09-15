@@ -1,9 +1,15 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import RootLayout from '@/app/layouts/RootLayout'
 import NutricionistaLayout from '@/app/layouts/NutricionistaLayout'
 import LandingPage from '@/pages/landing/LandingPage'
 import PacienteLayout from '@/app/layouts/PacienteLayout'
 import NotFoundPage from '@/pages/NotFoundPage'
+import { RecoveryFlowProvider } from '@/features/auth/context/RecoveryFlowContext'
+import LoginPage from '@/pages/auth/LoginPage'
+import SignupPage from '@/pages/auth/SignupPage'
+import RecoveryEmailPage from '@/pages/auth/RecoveryEmailPage'
+import RecoveryOtpPage from '@/pages/auth/RecoveryOtpPage'
+import RecoveryNewPasswordPage from '@/pages/auth/RecoveryNewPasswordPage'
 import NutricionistaDashboardPage from '@/pages/nutricionista/NutricionistaDashboardPage'
 import { NutricionistaCalendarioPage } from '@/pages/nutricionista/NutricionistaCalendarioPage'
 import { NutricionistaPerfilPage } from '@/pages/nutricionista/NutricionistaPerfilPage'
@@ -23,6 +29,26 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <LandingPage /> },
       { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+  {
+    path: '/auth',
+    children: [
+      { path: 'login', element: <LoginPage /> },
+      { path: 'signin', element: <SignupPage /> },
+      {
+        path: 'recovery',
+        element: (
+          <RecoveryFlowProvider>
+            <Outlet />
+          </RecoveryFlowProvider>
+        ),
+        children: [
+          { index: true, element: <RecoveryEmailPage /> },
+          { path: 'otp', element: <RecoveryOtpPage /> },
+          { path: 'new-password', element: <RecoveryNewPasswordPage /> },
+        ],
+      },
     ],
   },
   {
