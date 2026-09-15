@@ -24,3 +24,39 @@ export const planAlimenticioMock = {
     'Evitar alimentos ultraprocesados, mantener hidratación constante y realizar caminata de 15 minutos después de comer.',
 }
 
+// Conversación mock entre el paciente actual y su nutriólogo
+export const chatPacienteMock = {
+  nutriologo: {
+    nombre: 'Dr. Carlos Mendoza',
+    especialidad: 'Nutrición Clínica y Deportiva',
+    iniciales: 'CM',
+    enLinea: true,
+  },
+  mensajes: [
+    {
+      id: 1,
+      remitente: 'nutriologo',
+      texto: '¡Hola María! ¿Cómo te has sentido estos primeros días con tu nuevo plan alimenticio?',
+      hora: '09:15 AM',
+    },
+    {
+      id: 2,
+      remitente: 'paciente',
+      texto: 'Hola Dr. Carlos, bastante bien. Solo tenía una duda con la colación vespertina.',
+      hora: '09:30 AM',
+    },
+    {
+      id: 3,
+      remitente: 'paciente',
+      texto: '¿Puedo sustituir el yogur griego por kéfir sin azúcar si no encuentro en el súper?',
+      hora: '09:31 AM',
+    },
+    {
+      id: 4,
+      remitente: 'nutriologo',
+      texto: '¡Sin problema! El kéfir natural sin azúcar tiene un aporte probiótico y proteico muy similar. Adelante con ese cambio.',
+      hora: '09:42 AM',
+    },
+  ],
+}
+

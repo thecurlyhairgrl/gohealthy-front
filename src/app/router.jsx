@@ -11,6 +11,7 @@ import { NutricionistaChatPage } from '@/pages/nutricionista/NutricionistaChatPa
 import { NutricionistaPacienteDetallePage } from '@/pages/nutricionista/NutricionistaPacienteDetallePage'
 import PacientePlaceholderPage from '@/pages/paciente/PacientePlaceholderPage'
 import PacientePlanAlimenticioPage from '@/pages/paciente/PacientePlanAlimenticioPage'
+import PacienteChatPage from '@/pages/paciente/PacienteChatPage'
 
 // Rutas de la app. Al agregar una nueva pantalla: crear la página en
 // src/pages/<area>/NombrePage.jsx y declarar aquí su ruta apuntando a ella.
@@ -47,7 +48,7 @@ export const router = createBrowserRouter([
       { path: 'cumplimiento', element: <PacientePlaceholderPage titulo="Cumplimiento de Actividades" /> },
       { path: 'cuestionarios', element: <PacientePlaceholderPage titulo="Cuestionarios" /> },
       { path: 'progreso', element: <PacientePlaceholderPage titulo="Progreso" /> },
-      { path: 'chat', element: <PacientePlaceholderPage titulo="Chat" /> },
+      { path: 'chat', element: <PacienteChatPage /> },
     ],
   },
 ])
