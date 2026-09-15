@@ -9,8 +9,8 @@ import { NutricionistaCalendarioPage } from '@/pages/nutricionista/Nutricionista
 import { NutricionistaPerfilPage } from '@/pages/nutricionista/NutricionistaPerfilPage'
 import { NutricionistaChatPage } from '@/pages/nutricionista/NutricionistaChatPage'
 import { NutricionistaPacienteDetallePage } from '@/pages/nutricionista/NutricionistaPacienteDetallePage'
-import PacientePlaceholderPage from '@/pages/paciente/PacientePlaceholderPage'
 import PacientePlanAlimenticioPage from '@/pages/paciente/PacientePlanAlimenticioPage'
+import PacienteCumplimientoPage from '@/pages/paciente/PacienteCumplimientoPage'
 import PacienteChatPage from '@/pages/paciente/PacienteChatPage'
 import PacienteProgresoPage from '@/pages/paciente/PacienteProgresoPage'
 import PacienteCuestionariosPage from '@/pages/paciente/PacienteCuestionariosPage'
@@ -47,7 +47,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="plan-alimenticio" replace /> },
       // Rutas placeholder — se reemplazarán por sus páginas reales en specs individuales
       { path: 'plan-alimenticio', element: <PacientePlanAlimenticioPage /> },
-      { path: 'cumplimiento', element: <PacientePlaceholderPage titulo="Cumplimiento de Actividades" /> },
+      { path: 'cumplimiento', element: <PacienteCumplimientoPage /> },
       { path: 'cuestionarios', element: <PacienteCuestionariosPage /> },
       { path: 'progreso', element: <PacienteProgresoPage /> },
       { path: 'chat', element: <PacienteChatPage /> },

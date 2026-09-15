@@ -169,3 +169,63 @@ export const cuestionariosPacienteMock = {
   },
 }
 
+// Datos mock para la página de Cumplimiento de Actividades y Hábitos
+export const cumplimientoPacienteMock = {
+  fechaHoy: 'Lunes 14 de Septiembre, 2026',
+  rachaDias: 6,
+  metaAguaLitros: 2.2,
+  comidas: [
+    {
+      id: 'desayuno',
+      titulo: 'Desayuno',
+      horario: '07:30 - 08:30',
+      menu: 'Omelette de 2 claras y 1 huevo entero con espinacas y jitomate + 1 rebanada de pan integral tostado + 1/2 taza de papaya.',
+      completado: true,
+    },
+    {
+      id: 'colacion1',
+      titulo: 'Colación Matutina',
+      horario: '11:00 - 11:30',
+      menu: '1 manzana verde con 10 almendras naturales.',
+      completado: true,
+    },
+    {
+      id: 'comida',
+      titulo: 'Comida',
+      horario: '14:00 - 15:00',
+      menu: '150g de pechuga de pollo a la plancha + 1 taza de quinoa o arroz integral + ensalada verde abundante con 1 cda de aceite de oliva.',
+      completado: true,
+    },
+    {
+      id: 'colacion2',
+      titulo: 'Colación Vespertina',
+      horario: '17:30 - 18:00',
+      menu: '1 taza de yogur griego sin azúcar con 1 cucharada de semillas de chía.',
+      completado: true,
+    },
+    {
+      id: 'cena',
+      titulo: 'Cena',
+      horario: '20:30 - 21:30',
+      menu: 'Ensalada de atún en agua con nopales, jitomate, cebolla morada y 1/3 de aguacate.',
+      completado: false,
+    },
+  ],
+  vasosAguaConsumidos: 7, // 7 * 0.25 = 1.75 L
+  habitos: [
+    { id: 'h1', titulo: 'Caminata de 15 a 20 minutos después de comer', tipo: 'caminata', completado: true },
+    { id: 'h2', titulo: 'Evitar alimentos ultraprocesados y refrescos azucarados', tipo: 'procesados', completado: true },
+    { id: 'h3', titulo: 'Consumir ensalada verde o verduras antes de la proteína', tipo: 'ensalada', completado: true },
+    { id: 'h4', titulo: 'Dormir al menos 7 horas de descanso reparador', tipo: 'sueno', completado: false },
+  ],
+  consistenciaSemanal: [
+    { dia: 'Lun', fecha: '08 Sep', apego: 88, estado: 'alto' },
+    { dia: 'Mar', fecha: '09 Sep', apego: 92, estado: 'alto' },
+    { dia: 'Mié', fecha: '10 Sep', apego: 85, estado: 'alto' },
+    { dia: 'Jue', fecha: '11 Sep', apego: 78, estado: 'medio' },
+    { dia: 'Vie', fecha: '12 Sep', apego: 90, estado: 'alto' },
+    { dia: 'Sáb', fecha: '13 Sep', apego: 82, estado: 'alto' },
+    { dia: 'Dom', fecha: '14 Sep', apego: 85, estado: 'hoy' },
+  ],
+}
+
