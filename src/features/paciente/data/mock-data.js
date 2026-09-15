@@ -60,3 +60,32 @@ export const chatPacienteMock = {
   ],
 }
 
+// Datos de progreso y evolución del paciente
+export const progresoPacienteMock = {
+  meta: {
+    objetivo: 'Pérdida de grasa y recomposición corporal',
+    pesoInicial: 72.0,
+    pesoActual: 64.2,
+    pesoMeta: 58.0,
+    grasaInicial: 29.8,
+    grasaActual: 24.5,
+    grasaMeta: 20.0,
+    progresoPorcentaje: 65,
+    imcActual: '23.6 (Normal)',
+    apegoPromedio: '94%',
+  },
+  metricasComparativa: {
+    cambioPesoSemana: -0.8,
+    cambioGrasaSemana: -1.2,
+    cambioApegoSemana: 6,
+  },
+  evolucionTemporal: [
+    { fecha: '14 Jul', peso: 72.0, grasa: 29.8, apego: 85, nota: 'Inicio de plan alimenticio y hábitos saludables' },
+    { fecha: '28 Jul', peso: 70.5, grasa: 28.6, apego: 88, nota: 'Buena adaptación, reducción de sodio y azúcar' },
+    { fecha: '11 Ago', peso: 68.8, grasa: 27.2, apego: 90, nota: 'Aumento progresivo y sostenido de hidratación' },
+    { fecha: '25 Ago', peso: 66.7, grasa: 26.0, apego: 92, nota: 'Mayor energía y constancia en colaciones' },
+    { fecha: '08 Sep', peso: 65.0, grasa: 25.7, apego: 88, nota: 'Mantenimiento del ritmo metabólico y actividad' },
+    { fecha: '14 Sep', peso: 64.2, grasa: 24.5, apego: 94, nota: 'Excelente apego a los horarios y requerimiento hídrico' },
+  ],
+}
+
