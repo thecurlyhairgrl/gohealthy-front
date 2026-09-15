@@ -15,8 +15,11 @@ import { NutricionistaCalendarioPage } from '@/pages/nutricionista/Nutricionista
 import { NutricionistaPerfilPage } from '@/pages/nutricionista/NutricionistaPerfilPage'
 import { NutricionistaChatPage } from '@/pages/nutricionista/NutricionistaChatPage'
 import { NutricionistaPacienteDetallePage } from '@/pages/nutricionista/NutricionistaPacienteDetallePage'
-import PacientePlaceholderPage from '@/pages/paciente/PacientePlaceholderPage'
 import PacientePlanAlimenticioPage from '@/pages/paciente/PacientePlanAlimenticioPage'
+import PacienteCumplimientoPage from '@/pages/paciente/PacienteCumplimientoPage'
+import PacienteChatPage from '@/pages/paciente/PacienteChatPage'
+import PacienteProgresoPage from '@/pages/paciente/PacienteProgresoPage'
+import PacienteCuestionariosPage from '@/pages/paciente/PacienteCuestionariosPage'
 
 // Rutas de la app. Al agregar una nueva pantalla: crear la página en
 // src/pages/<area>/NombrePage.jsx y declarar aquí su ruta apuntando a ella.
@@ -70,10 +73,10 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="plan-alimenticio" replace /> },
       // Rutas placeholder — se reemplazarán por sus páginas reales en specs individuales
       { path: 'plan-alimenticio', element: <PacientePlanAlimenticioPage /> },
-      { path: 'cumplimiento', element: <PacientePlaceholderPage titulo="Cumplimiento de Actividades" /> },
-      { path: 'cuestionarios', element: <PacientePlaceholderPage titulo="Cuestionarios" /> },
-      { path: 'progreso', element: <PacientePlaceholderPage titulo="Progreso" /> },
-      { path: 'chat', element: <PacientePlaceholderPage titulo="Chat" /> },
+      { path: 'cumplimiento', element: <PacienteCumplimientoPage /> },
+      { path: 'cuestionarios', element: <PacienteCuestionariosPage /> },
+      { path: 'progreso', element: <PacienteProgresoPage /> },
+      { path: 'chat', element: <PacienteChatPage /> },
     ],
   },
 ])
