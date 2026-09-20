@@ -2,8 +2,8 @@ import { bannerText as defaultBannerText } from '@/features/landing/data/landing
 
 export function LandingBanner({ text = defaultBannerText }) {
   return (
-    <section className="bg-primary px-4 py-14 sm:py-20">
-      <p className="mx-auto max-w-4xl text-center font-heading text-3xl leading-tight font-bold uppercase text-primary-foreground md:text-5xl">
+    <section className="w-full bg-primary px-4 py-14 sm:py-20 justify-items-center">
+      <p className="mx-auto block w-full max-w-4xl text-center font-heading text-3xl font-bold uppercase leading-tight text-primary-foreground md:text-5xl">
         {text}
       </p>
     </section>

@@ -21,7 +21,7 @@ export function LandingHero() {
           </div>
         </div>
 
-        <div className="mx-auto flex w-full max-w-md flex-col gap-3 md:max-w-none">
+        <div className="mx-auto flex w-full max-w-md flex-col gap-1 md:max-w-none">
           <img
             src={heroContent.images.lifestyle}
             alt="Personas activas disfrutando un estilo de vida saludable"

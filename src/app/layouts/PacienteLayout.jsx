@@ -18,9 +18,6 @@ function PacienteLayout() {
             <SidebarTrigger />
             <span className="font-heading font-semibold text-sm">GoHealthy</span>
           </div>
-          <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Heart className="size-3.5" />
-          </div>
         </header>
 
         {/* Contenido de la página */}

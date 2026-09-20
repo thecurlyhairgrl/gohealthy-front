@@ -88,8 +88,8 @@ function PacienteSidebar() {
       {/* Header: Logo y marca */}
       <SidebarHeader className="p-3">
         <div className="flex items-center gap-2.5 overflow-hidden group-data-[collapsible=icon]:justify-center">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold shadow-xs">
-            <Heart className="size-4" />
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-xl text-primary-foreground font-bold shadow-xs">
+            <img src="/hoja.svg" alt="" />
           </div>
           <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
             <img
