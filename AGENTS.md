@@ -2,67 +2,83 @@
 
 ## Qué es este proyecto
 
-GoHealthy conecta nutriólogos con sus pacientes: seguimiento de alimentación, ejercicio y evolución física en un solo lugar, reemplazando papel/Excel/WhatsApp. Este repo es la SPA de React que usan ambos tipos de usuario (nutriólogo y paciente).
+GoHealthy conecta nutriólogos con sus pacientes: seguimiento de alimentación, ejercicio y evolución física en un solo lugar, reemplazando papel, Excel y WhatsApp. Este repo es la SPA de React que usan los dos tipos de usuario (nutriólogo y paciente). La API está en el repo `gohealthy-back`.
+
+## Lee esto antes de trabajar
+
+1. [`docs/backend/README.md`](docs/backend/README.md): cómo funciona la API, sus modelos y las reglas que el front debe respetar.
+2. [`docs/frontend/specs/conexion-api-back.spec.md`](docs/frontend/specs/conexion-api-back.spec.md): el contrato de cada endpoint.
+3. [`docs/frontend/GUIA-FRONT.md`](docs/frontend/GUIA-FRONT.md): el plan de trabajo, paso por paso. Si te piden "el paso 2.3", es de esa guía.
+
+**El back es la fuente de verdad.** Si una pantalla no coincide con la API, se cambia la pantalla. No inventes endpoints, campos ni valores: si falta algo en la API, dilo en lugar de suponer su forma o usar datos de prueba.
+
+## Estado del proyecto
+
+El front se está reorganizando con la guía. Hasta terminar la Parte 1, conviven la estructura vieja (`src/app/`, `src/features/`) y la nueva. **Todo el código nuevo va en la estructura nueva**, y lo viejo se mueve a ella con `git mv`.
 
 ## Stack
 
-- **React 19 + react-router-dom** — ruteo declarado en código (`src/app/router.jsx`),
-- **Vite** — bundler y dev server.
-- **Tailwind CSS v4** — config vía CSS en `src/index.css` (`@theme`); `tailwind.config.js` solo define qué archivos escanear.
-- **shadcn/ui + base-ui** — componentes en `src/components/ui/`, generados con `npx shadcn add <componente>`.
-- **TanStack Query** — estado de servidor (cliente en `src/lib/query-client.js`).
-- **Zustand** — estado de cliente.
-- **React Hook Form + Zod** — formularios y validación.
-- **Recharts** — gráficos.
-- **axios** — HTTP (cliente central en `src/lib/api-client.js`, usa `VITE_API_URL`).
-- **pnpm** — gestor de paquetes. Usar siempre `pnpm`
-- **Podman + Podman Compose** — entorno de desarrollo en contenedor, opcional para el día a día (ver `CONTRIBUTING.md`).
+- **React 19 + react-router-dom**: rutas declaradas en `src/router.jsx`, con `ProtectedRoute` por rol.
+- **Vite**: bundler y servidor de desarrollo.
+- **Tailwind CSS v4**: configuración en `src/index.css` (`@theme`).
+- **shadcn/ui + base-ui**: componentes en `src/components/ui/`, generados con `npx shadcn add <componente>`.
+- **TanStack Query**: todas las peticiones a la API pasan por hooks de `src/hooks/`.
+- **React Hook Form + Zod** (con `@hookform/resolvers`): formularios. Los esquemas van en `src/schemas/`.
+- **axios**: un solo cliente, `src/api/client.js`, que agrega el token y maneja el `401`.
+- **Recharts**: gráficas.
+- **pnpm**: gestor de paquetes. Usar siempre `pnpm`.
 
-## Estructura del proyecto (organización por features)
+La sesión vive en `src/context/AuthContext.jsx`, un contexto sencillo como el del proyecto de clase. **No se usa Zustand.**
 
-Detalle completo y siempre actualizado en [docs/frontend/README.md](docs/frontend/README.md#estructura-de-carpetas). Resumen:
+## Estructura
 
-- `src/app/` — router, providers, layouts globales. Sin lógica de negocio.
-- `src/pages/` — componentes de ruta: delgados, solo componen features.
-- `src/features/<dominio>/` — lógica de negocio por dominio (`api/`, `components/`, `schemas/`, `store/`). La mayoría del código nuevo va aquí.
-- `src/components/ui/` — shadcn. **No editar a mano** salvo necesidad justificada (documentarlo en el PR).
-- `src/hooks/`, `src/lib/`, `src/stores/` — compartido entre features.
+```
+src/
+├── api/          Una función por endpoint, un archivo por recurso
+├── components/   Compartidos (FormField, ProtectedRoute, ConfirmDialog) y por área:
+│                 landing/, auth/, nutriologo/, paciente/. ui/ es shadcn: no se edita
+├── context/      AuthContext
+├── hooks/        Consultas y cambios de TanStack Query, un archivo por recurso
+├── layouts/      AuthLayout, NutritionistLayout, PatientLayout
+├── lib/          query-client, notify, fechas, textos, imágenes, horarios
+├── pages/        Una página por ruta: landing/, auth/, primer-ingreso/, nutriologo/, paciente/
+├── schemas/      Esquemas de Zod
+├── data/         Textos fijos de la landing y de auth
+├── router.jsx
+├── providers.jsx
+└── main.jsx
+```
 
-**Regla:** si algo lo usa una sola feature, vive en `features/<esa-feature>/`. Si lo usan dos o más (o es parte del layout general), sube a `components/`, `hooks/` o `lib/`.
+Las páginas son delgadas: arman componentes y usan hooks. No llaman a axios directamente.
+
+## Reglas
+
+- **Avisos:** nada de `alert()`, `confirm()` ni `prompt()`. Usa `notifySuccess` y `notifyError` de `src/lib/notify.js` (toasts), y `ConfirmDialog` para confirmar.
+- **Estados:** toda pantalla con datos muestra carga, error y vacío.
+- **Errores de la API:** el mensaje en español sale de `getErrorMessage(error)` (`src/api/client.js`).
+- **Textos:** todo lo que ve el usuario va en español. Los valores de la API (`scheduled`, `breakfast`…) se traducen con `src/lib/labels.js`.
+- **Fechas:** usa `src/lib/dates.js`. Nunca `new Date().toISOString()` para una fecha sin hora.
+- **Imágenes de la API:** con `getImageUrl()` de `src/lib/image-url.js`.
+- **Código:** sin punto y coma, comillas simples, alias `@/` en lugar de rutas relativas largas. Nombres de archivos de componentes en PascalCase.
 
 ## Comandos
 
-- `pnpm install` — instalar dependencias.
-- `pnpm dev` — servidor de desarrollo (`http://localhost:5173`).
-- `pnpm build` — build de producción. **Correr antes de dar una tarea por terminada.**
-- `pnpm lint` — ESLint. **Correr antes de dar una tarea por terminada; el proyecto debe lintear sin errores.**
-- `pnpm podman:up` / `pnpm podman:down` — levantar/bajar el entorno con Podman.
+- `pnpm install`: instalar dependencias.
+- `pnpm dev`: servidor de desarrollo en `http://localhost:5173`. Necesita el back levantado.
+- `pnpm lint` y `pnpm build`: **los dos deben pasar antes de dar una tarea por terminada.**
 
-## Convenciones
+## Ramas y commits
 
-- Alias `@/` apunta a `src/` — usarlo en vez de rutas relativas largas (`../../../`).
-- Commits: [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `chore:`, etc.).
-- Ramas: `main` (producción) + `develop` (integración) + `feature/`, `fix/`, `hotfix/`. Nunca commitear directo a `main` ni `develop`.
-- Todo cambio va en una rama propia y se sube vía Pull Request contra `develop`, con al menos 1 aprobación antes de mergear.
-- Flujo completo de ramas/commits/PRs: [CONTRIBUTING.md](CONTRIBUTING.md).
+- Ramas: `main` (producción), `develop` (integración) y `feature/<nombre>/<persona>`.
+- Cada cambio va en su rama y se sube con un Pull Request contra `develop`.
+- Commits con [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`.
+- Flujo completo en [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Qué NO debe hacer un agente sin confirmarlo con el equipo
 
-- No agregar dependencias nuevas a `package.json` sin que se pida explícitamente.
-- No inventar endpoints ni contratos de API: el Back-End todavía está en definición (`docs/backend/`). Si hace falta un endpoint que no existe, señalarlo en vez de asumir su forma.
-- No commitear `.env` ni credenciales (`.env` ya está en `.gitignore`; usar `.env.example` como referencia).
-- No hacer force-push ni tocar `main`/`develop` directamente.
-- No reactivar `minimum-release-age` en `.npmrc` sin discutirlo con el equipo — se desactivó a propósito (ver el comentario en ese archivo).
-
-## Particularidades del entorno (para no "arreglar" algo que ya está arreglado a propósito)
-
-- `vite.config.js` fuerza `server.watch.usePolling`: el watcher nativo de archivos crashea (`EIO`) sobre los bind mounts de Podman en Windows/WSL2.
-- `.npmrc` desactiva `minimum-release-age` de pnpm: sin eso, un `pnpm install` limpio puede fallar si alguna dependencia fue publicada hace menos de 24h.
-- Si con Podman el contenedor arranca bien (logs dicen "VITE ready") pero `localhost:5173` no responde desde el navegador: es un bug de red de WSL2, no del proyecto. Ver troubleshooting en [CONTRIBUTING.md](CONTRIBUTING.md#problemas-conocidos-ya-resueltos-por-si-vuelven-a-aparecer).
-
-## Documentación adicional
-
-- [CONTRIBUTING.md](CONTRIBUTING.md) — flujo de ramas, commits, cómo abrir/revisar un PR, cómo correr el proyecto.
-- [docs/frontend/README.md](docs/frontend/README.md) — stack y estructura de carpetas en detalle.
-- [docs/README.md](docs/README.md) — índice general (incluye Back-End y arquitectura, en construcción).
-- `.claude/skills/` — skills específicas de este proyecto para agentes de Claude Code.
+- Agregar dependencias que no estén en la guía.
+- Cambiar el back o pedir endpoints nuevos sin señalarlo primero.
+- Editar `src/components/ui/`.
+- Commitear `.env` o credenciales.
+- Hacer force-push o commitear directo en `main` o `develop`.
+- Reactivar `minimum-release-age` en `.npmrc`: se desactivó a propósito, porque sin eso un `pnpm install` limpio puede fallar si una dependencia se publicó hace menos de 24 horas.
