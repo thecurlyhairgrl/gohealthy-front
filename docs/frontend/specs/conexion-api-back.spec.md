@@ -382,6 +382,8 @@ Los 7 días son opcionales, y un día puede tener solo algunas comidas.
 
 Un paciente sin consultas trae `lastConsultation` y `daysSinceLastConsultation` en `null`.
 
+El peso de `patient-follow-up` (`currentWeightKg`) y de `weight-progress` sale de las mediciones **y** de las consultas, como en `/dashboard/progress`. En `weight-progress`, `totalMeasurements` cuenta todos esos registros.
+
 ---
 
 ## 6. Del mock a la API

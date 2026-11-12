@@ -17,6 +17,8 @@ import {
 import {
   LayoutDashboard,
   Users,
+  BookOpen,
+  BarChart3,
   MessageSquare,
   User,
   LogOut,
@@ -39,6 +41,16 @@ const navItems = [
     label: 'Pacientes',
     href: '/nutriologo/pacientes',
     icon: Users,
+  },
+  {
+    label: 'Recetas',
+    href: '/nutriologo/recetas',
+    icon: BookOpen,
+  },
+  {
+    label: 'Reportes',
+    href: '/nutriologo/reportes',
+    icon: BarChart3,
   },
   {
     label: 'Mensajes',

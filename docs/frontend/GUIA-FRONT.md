@@ -6,8 +6,8 @@ Esta guía reorganiza el front y lo conecta con la API. Está repartida por pers
 - [x] La sesión real: login, registro, recuperación de contraseña y primer ingreso del paciente
 - [x] Las pantallas del nutriólogo conectadas a la API, con las correcciones del profesor
 - [x] Las pantallas del paciente conectadas a la API, con el plan alimenticio como receta
-- [ ] La biblioteca de recetas, el constructor del plan y los reportes
-- [ ] Ningún `alert()` ni `confirm()` del navegador: todo con toasts y diálogos de shadcn
+- [x] La biblioteca de recetas, el constructor del plan y los reportes
+- [x] Ningún `alert()` ni `confirm()` del navegador: todo con toasts y diálogos de shadcn
 - [x] Ningún dato de prueba (`src/mocks/`)
 
 **El back manda.** Cuando una pantalla no coincida con lo que responde la API, se cambia la pantalla. El contrato de cada endpoint está en `docs/frontend/specs/conexion-api-back.spec.md`; en esta guía se cita como "el spec".
@@ -39,7 +39,7 @@ Esta guía reorganiza el front y lo conecta con la API. Está repartida por pers
 | 1 | Dante | Limpieza, estructura, sesión, rutas y pantallas de autenticación | Nada |
 | 2 | Dante (hecha) | Pantallas del nutriólogo | Parte 1 |
 | 3 | Dante (hecha) | Pantallas del paciente | Parte 1 |
-| 4 | Dante | Recetas, constructor del plan y reportes | Parte 1 |
+| 4 | Dante (hecha) | Recetas, constructor del plan y reportes | Parte 1 |
 | 5 | Todos | Limpieza final y prueba completa | Partes 1 a 4 |
 
 **La Parte 1 va primero.** Mientras tanto, Leo y Fer pueden ir moviendo sus componentes a la estructura nueva (paso 1.3) y armando las pantallas con diseño, sin conectarlas todavía. Si quieren otro reparto, solo cambien los nombres: las partes no dependen de quién las haga.
@@ -1153,40 +1153,51 @@ Esta parte ya está hecha (rama `feature/paciente/dante`). Con ella se borró `s
 
 ---
 
-# Parte 4 — Dante: recetas, constructor del plan y reportes
+# Parte 4 — Recetas, constructor del plan y reportes (hecha)
+
+Esta parte ya está hecha (rama `feature/recetas-plan-reportes/dante`).
+
+**Decisiones:**
+
+| Tema | Decisión |
+|---|---|
+| Distribución | Tabla completa: los 19 grupos del SMAE (con subgrupos) por las 5 comidas, con kcal por comida y total contra la meta |
+| Porciones | Al asignar una receta se copia al plan; cada ingrediente tiene − / + para sus equivalentes (la cantidad se recalcula) y se puede quitar. La receta original no cambia |
+| Plantillas | Fuera por ahora; para repetir comidas está "Copiar día" |
+| Reportes de peso | "Seguimiento" y "Evolución de peso" toman el peso de mediciones **y** consultas, igual que el resto del sistema (cambio en el back) |
+
+Ayudas en `src/lib/`: `smae.js` (`groupLabel`, `getKcal`, `quantityFor`) y `meal-plan.js` (pasa el plan de la forma de la API a la del constructor y de regreso, copia una receta al plan y cuenta los equivalentes de una comida). El buscador de alimentos del SMAE es `components/nutriologo/BuscadorAlimentos.jsx`.
 
 ## Paso 4.1 — Biblioteca de recetas
 
-`/nutriologo/recetas`, con la sección 5.10 del spec:
+`/nutriologo/recetas` (`NutricionistaRecetasPage`):
 
-- Tarjetas con foto, nombre, comidas y kcal. Las kcal se calculan con los equivalentes y `/smae/groups`.
-- Búsqueda y filtro por comida.
-- Crear y editar recetas propias. Las compartidas (`nutritionist: null`) solo se ven.
-- La foto se sube después de crear la receta: `POST /recipes/:id/image`.
+- Tarjetas con foto, nombre, comidas, kcal y minutos. Las kcal se calculan con los equivalentes y `/smae/groups`.
+- Búsqueda por nombre y filtro por comida, en la misma página.
+- Al tocar una receta se abre su detalle. Las propias tienen Editar y Eliminar; las compartidas (`nutritionist: null`) solo se ven.
+- `RecetaFormModal` (crear y editar): nombre, minutos, comidas, ingredientes buscados en el SMAE con sus equivalentes, pasos y foto. La foto se sube después de guardar la receta (`POST /recipes/:id/image`).
 
 ## Paso 4.2 — Constructor del plan
 
-`/nutriologo/pacientes/:id/plan`, como lo describe la sección 7 del spec:
+`/nutriologo/pacientes/:id/plan` (`NutricionistaPlanBuilderPage`), con sus componentes en `components/nutriologo/plan/`:
 
-1. **Meta:** kcal (de la última consulta, editable) y agua.
-2. **Distribución:** equivalentes por grupo en cada comida, con las kcal calculadas al momento.
-3. **Menú:** pestañas por día; en cada comida se elige una receta (`GET /recipes?mealTime=`) o alimentos sueltos (`GET /smae/foods`). Un contador compara lo asignado con lo planeado y **avisa, pero no bloquea**.
-4. **Copiar día** a otros días.
-5. **Guardar:** `POST /meal-plans` la primera vez y `PUT /meal-plans/:id` después, pidiendo el motivo del cambio.
-6. **Historial:** lista de versiones y comparación lado a lado.
-
-Al asignar una receta, se **copian** al plan su nombre (`title`), su id (`recipe`), `imageUrl`, sus ingredientes (`foods`) y sus pasos (`steps`).
+1. **Datos:** nombre, kcal (si hay, de la última consulta con cálculo energético), agua y recomendaciones.
+2. **Distribución** (`PlanDistribucionTabla`).
+3. **Menú:** pestañas por día. Cada comida (`PlanComidaEditor`) puede ser una receta (`RecetaPickerDialog`, filtrado por esa comida) o alimentos sueltos con su preparación. El contador compara con la distribución ("Cereales 1.5 de 2"): verde si coincide, ámbar si falta, rojo si sobra. **Avisa, pero no bloquea.**
+4. **Copiar día** (`CopiarDiaDialog`): reemplaza las comidas de los días elegidos.
+5. **Guardar:** `POST /meal-plans` la primera vez; después `PUT /meal-plans/:id` con el motivo (`MotivoCambioDialog`). Pide nombre y al menos una comida.
+6. **Historial** (`PlanHistorialSheet`): las versiones con su fecha, quién y por qué; al elegir una se compara lado a lado con la actual, resaltando lo que cambió.
 
 ## Paso 4.3 — Reportes
 
-`/nutriologo/reportes`, con los cuatro reportes de la sección 5.12 del spec, usando las gráficas de Recharts que ya están instaladas:
+`/nutriologo/reportes` (`NutricionistaReportesPage`), en pestañas:
 
-| Reporte | Cómo mostrarlo |
+| Reporte | Cómo se muestra |
 |---|---|
-| Seguimiento de pacientes | Tabla; primero los que necesitan seguimiento |
-| Evolución de peso | Barras con el cambio de cada paciente |
-| Bienestar por padecimiento | Tabla o barras por padecimiento |
-| Alimentos más usados | Lista con su grupo |
+| Seguimiento | Tabla; primero los que no tienen cita próxima. Etiqueta "Agendar cita" o "Con cita" |
+| Evolución de peso | Barras con el cambio de cada paciente (verde si bajó) y tabla. Periodo de 30, 90 o 180 días |
+| Bienestar | Barras del cumplimiento del plan por padecimiento y tabla con los promedios. Periodo seleccionable |
+| Alimentos | Los 10 más usados en los planes activos, con su grupo |
 
 ---
 
