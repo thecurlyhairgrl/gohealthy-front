@@ -1,124 +1,128 @@
 import { useState } from 'react'
-import { FileText, Download, Eye, UploadCloud, CheckCircle2, FileCheck } from 'lucide-react'
+import { Download, FileText, Trash2, Upload } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { toast } from '@/components/ui/toast'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import SubirDocumentoModal from '@/components/nutriologo/SubirDocumentoModal'
+import { useAuth } from '@/context/AuthContext'
+import { useLabDocuments } from '@/hooks/useLabDocuments'
+import { deleteLabDocumentRequest } from '@/api/lab-documents'
+import { downloadFile } from '@/api/client'
+import { formatDate, formatDateOnly } from '@/lib/dates'
+
+// 1536000 -> "1.5 MB"
+const formatSize = (bytes) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`)
 
 /**
- * Pestaña de Documentos y Estudios Clínicos del Paciente.
- * Lista los archivos aportados (análisis de laboratorio, bitácoras, etc.)
- * y permite simular su descarga o previsualización.
+ * Documentos de laboratorio del paciente: los sube él o el nutriólogo.
+ * Solo quien subió un documento lo puede borrar.
  */
-export default function ExpedienteDocumentosTab({ documentos = [] }) {
-  const [descargandoId, setDescargandoId] = useState(null)
-  const [mensaje, setMensaje] = useState(null)
+export default function ExpedienteDocumentosTab({ patientId }) {
+  const { user } = useAuth()
+  const { documents, loading, error, reload } = useLabDocuments(patientId)
+  const [isUploadOpen, setIsUploadOpen] = useState(false)
+  const [toDelete, setToDelete] = useState(null)
 
-  const handleDescargar = (doc) => {
-    setDescargandoId(doc.id)
-    setTimeout(() => {
-      setDescargandoId(null)
-      setMensaje(`Descargando "${doc.nombre}"...`)
-      setTimeout(() => setMensaje(null), 3500)
-    }, 600)
+  // Un <a href> no manda el token, por eso se descarga con downloadFile
+  async function handleDownload(document) {
+    try {
+      await downloadFile(`/lab-documents/${document._id}/file`, document.originalName)
+    } catch (err) {
+      toast.add({ title: err.message, type: 'error' })
+    }
   }
 
-  const handleVer = (doc) => {
-    setMensaje(`Abriendo vista previa de "${doc.nombre}"...`)
-    setTimeout(() => setMensaje(null), 3500)
+  async function handleDelete() {
+    try {
+      await deleteLabDocumentRequest(toDelete._id)
+      toast.add({ title: 'Documento eliminado', type: 'success' })
+      reload()
+    } catch (err) {
+      toast.add({ title: 'No se pudo eliminar', description: err.message, type: 'error' })
+    }
   }
 
   return (
     <div className="space-y-6">
-      {/* Encabezado con acción */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold font-heading">Documentos y Estudios Clínicos</h2>
-          <p className="text-xs text-muted-foreground">
-            Expediente de análisis clínicos, bitácoras de comidas y resultados de laboratorio
-          </p>
+          <h2 className="flex items-center gap-2 font-heading text-lg font-semibold">
+            <FileText className="size-5 text-primary" />
+            Documentos y estudios
+          </h2>
+          <p className="text-xs text-muted-foreground">PDF, JPG o PNG de hasta 10 MB</p>
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 border-[#2F6B4E]/30 text-[#2F6B4E] hover:bg-[#2F6B4E]/10 w-fit"
-          onClick={() => {
-            setMensaje('La carga de nuevos documentos por parte del nutriólogo estará disponible próximamente.')
-            setTimeout(() => setMensaje(null), 4000)
-          }}
-        >
-          <UploadCloud className="size-4" />
-          <span>Subir Documento</span>
+        <Button onClick={() => setIsUploadOpen(true)}>
+          <Upload data-icon="inline-start" />
+          Subir documento
         </Button>
       </div>
 
-      {mensaje && (
-        <div className="flex items-center gap-2 rounded-lg bg-[#2F6B4E]/10 border border-[#2F6B4E]/20 p-3 text-xs font-medium text-[#2F6B4E]">
-          <CheckCircle2 className="size-4 shrink-0" />
-          <span>{mensaje}</span>
-        </div>
-      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {/* Lista de Documentos */}
-      {documentos.length === 0 ? (
-        <Card className="border-dashed border-2 border-border/80">
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <FileText className="size-10 text-muted-foreground/50 mb-3" />
-            <p className="text-sm font-medium text-foreground">No hay documentos registrados</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              El paciente aún no ha cargado estudios clínicos o recetas a su expediente.
-            </p>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <Skeleton className="h-24 w-full" />
+      ) : documents.length === 0 ? (
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FileText />
+            </EmptyMedia>
+            <EmptyTitle>No hay documentos</EmptyTitle>
+            <EmptyDescription>Aquí aparecen los estudios que suban tú o el paciente.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
-        <div className="grid grid-cols-1 gap-3">
-          {documentos.map((doc) => (
-            <Card
-              key={doc.id}
-              className="border-border/60 bg-card/80 transition-colors hover:border-[#2F6B4E]/30 hover:bg-muted/30"
-            >
-              <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                    <FileCheck className="size-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {doc.nombre}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                      <span>Subido el {doc.fecha}</span>
-                      <span>•</span>
-                      <span>{doc.tamano}</span>
+        <div className="grid gap-3">
+          {documents.map((document) => {
+            const isMine = document.uploadedBy === user.id
+            return (
+              <Card key={document._id} className="border-border/60">
+                <CardContent className="flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center">
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <FileText className="size-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{document.originalName}</p>
+                      {document.description && <p className="truncate text-xs">{document.description}</p>}
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {isMine ? 'Lo subiste tú' : 'Lo subió el paciente'} el {formatDate(document.createdAt)}
+                        {document.studyDate && ` · Estudio del ${formatDateOnly(document.studyDate)}`} · {formatSize(document.sizeBytes)}
+                      </p>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleVer(doc)}
-                    className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    <Eye className="size-3.5" />
-                    <span className="hidden sm:inline">Vista previa</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDescargar(doc)}
-                    disabled={descargandoId === doc.id}
-                    className="gap-1.5 text-xs border-border hover:bg-[#2F6B4E]/10 hover:text-[#2F6B4E]"
-                  >
-                    <Download className="size-3.5" />
-                    <span>{descargandoId === doc.id ? 'Descargando...' : 'Descargar'}</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="flex shrink-0 gap-2 self-end sm:self-center">
+                    <Button variant="outline" size="sm" onClick={() => handleDownload(document)}>
+                      <Download data-icon="inline-start" />
+                      Descargar
+                    </Button>
+                    {isMine && (
+                      <Button variant="ghost" size="icon-sm" aria-label="Eliminar documento" onClick={() => setToDelete(document)}>
+                        <Trash2 className="text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
+
+      <SubirDocumentoModal open={isUploadOpen} onOpenChange={setIsUploadOpen} patientId={patientId} onUploaded={reload} />
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        onOpenChange={(open) => !open && setToDelete(null)}
+        title="¿Eliminar el documento?"
+        description={toDelete?.originalName}
+        confirmLabel="Eliminar"
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

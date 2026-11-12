@@ -26,7 +26,10 @@ export async function apiFetch(endpoint, { method = 'GET', body } = {}) {
   // Respuestas sin body
   const data = await response.json().catch(() => null)
   if (!response.ok) {
-    throw new Error(data?.message || 'Ocurrió un error en la petición')
+    const error = new Error(data?.message || 'Ocurrió un error en la petición')
+    // El código HTTP, por si la pantalla necesita distinguir un 404 de otro error
+    error.status = response.status
+    throw error
   }
   return data
 }

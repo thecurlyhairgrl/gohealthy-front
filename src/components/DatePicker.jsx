@@ -15,10 +15,16 @@ const toDate = (text) => {
 }
 
 // Selector de fecha con el calendario de shadcn.
-// Recibe y regresa la fecha como texto "yyyy-MM-dd", igual que un <input type="date">
-export function DatePicker({ id, value, onChange, placeholder = 'Elige una fecha', invalid, startYear = 1920, endDate = new Date() }) {
+// Recibe y regresa la fecha como texto "yyyy-MM-dd", igual que un <input type="date">.
+// fromDate y toDate limitan los días que se pueden elegir
+export function DatePicker({ id, value, onChange, placeholder = 'Elige una fecha', invalid, fromDate, toDate: lastDate, defaultMonth }) {
   const [open, setOpen] = useState(false)
   const selected = toDate(value)
+
+  // Días que no se pueden elegir
+  const disabled = []
+  if (fromDate) disabled.push({ before: fromDate })
+  if (lastDate) disabled.push({ after: lastDate })
 
   function handleSelect(date) {
     onChange(date ? format(date, 'yyyy-MM-dd') : '')
@@ -49,10 +55,10 @@ export function DatePicker({ id, value, onChange, placeholder = 'Elige una fecha
           captionLayout="dropdown"
           selected={selected}
           onSelect={handleSelect}
-          defaultMonth={selected || new Date(2000, 0)}
-          startMonth={new Date(startYear, 0)}
-          endMonth={endDate}
-          disabled={{ after: endDate }}
+          defaultMonth={selected || defaultMonth}
+          startMonth={fromDate}
+          endMonth={lastDate}
+          disabled={disabled}
         />
       </PopoverContent>
     </Popover>

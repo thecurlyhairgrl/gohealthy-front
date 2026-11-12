@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   Sidebar,
@@ -8,13 +9,14 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
 import {
   LayoutDashboard,
-  Calendar,
+  Users,
   MessageSquare,
   User,
   LogOut,
@@ -23,6 +25,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { getUnreadCountRequest } from '@/api/messages'
 import logoGoHealthy from '@/assets/GoHealthyLogo.png'
 
 // Links de navegación del sidebar del nutriólogo.
@@ -33,12 +36,12 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    label: 'Calendario',
-    href: '/nutriologo/calendario',
-    icon: Calendar,
+    label: 'Pacientes',
+    href: '/nutriologo/pacientes',
+    icon: Users,
   },
   {
-    label: 'Chat',
+    label: 'Mensajes',
     href: '/nutriologo/chat',
     icon: MessageSquare,
   },
@@ -59,6 +62,20 @@ function NutricionistaSidebar() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const [unread, setUnread] = useState(0)
+
+  // Mensajes sin leer: se vuelven a contar al cambiar de página y al leer una conversación
+  useEffect(() => {
+    function loadUnread() {
+      getUnreadCountRequest()
+        .then((data) => setUnread(data.unread))
+        .catch(() => setUnread(0))
+    }
+
+    loadUnread()
+    window.addEventListener('messages-read', loadUnread)
+    return () => window.removeEventListener('messages-read', loadUnread)
+  }, [location.pathname])
 
   // Borra la sesión y regresa al login
   function handleLogout() {
@@ -126,6 +143,7 @@ function NutricionistaSidebar() {
                       <item.icon />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
+                    {item.href === '/nutriologo/chat' && unread > 0 && <SidebarMenuBadge>{unread}</SidebarMenuBadge>}
                   </SidebarMenuItem>
                 )
               })}

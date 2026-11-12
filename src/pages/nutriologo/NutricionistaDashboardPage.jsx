@@ -1,106 +1,86 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { UserPlus } from 'lucide-react'
+import { useState } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
 import CitasDelDia from '@/components/nutriologo/CitasDelDia'
-import PacienteCard from '@/components/nutriologo/PacienteCard'
-import BuscadorPacientes from '@/components/nutriologo/BuscadorPacientes'
-import {
-  nutriologoMock,
-  pacientesMock,
-  citasDelDiaMock,
-} from '@/mocks/nutriologo'
+import { CalendarioHeader } from '@/components/nutriologo/CalendarioHeader'
+import { CalendarioSemanal } from '@/components/nutriologo/CalendarioSemanal'
+import { CitaDetalleSheet } from '@/components/nutriologo/CitaDetalleSheet'
+import AgendarCitaModal from '@/components/nutriologo/AgendarCitaModal'
+import RegistrarConsultaModal from '@/components/nutriologo/RegistrarConsultaModal'
+import { useAuth } from '@/context/AuthContext'
+import { useAppointments } from '@/context/AppointmentsContext'
 
 /**
- * Página principal del Dashboard del Nutriólogo.
- * Muestra un saludo, las citas del día, un buscador de pacientes,
- * un botón para registrar pacientes y un grid de tarjetas de pacientes.
+ * Dashboard del nutriólogo: las citas de hoy y el calendario de la semana por horas.
+ * La lista de pacientes está en su propia página.
  */
 function NutricionistaDashboardPage() {
-  const navigate = useNavigate()
-  const [busqueda, setBusqueda] = useState('')
+  const { user } = useAuth()
+  const { weekDays, appointments, todayAppointments, loading, error, moveWeek } = useAppointments()
 
-  // Filtra pacientes por nombre en tiempo real
-  const pacientesFiltrados = useMemo(() => {
-    if (!busqueda.trim()) return pacientesMock
-    const termino = busqueda.toLowerCase()
-    return pacientesMock.filter((p) =>
-      p.nombre.toLowerCase().includes(termino)
-    )
-  }, [busqueda])
+  // Cita abierta en el panel lateral
+  const [selected, setSelected] = useState(null)
+  // Diálogo de agendar: { initialDate, appointment } o null si está cerrado
+  const [scheduling, setScheduling] = useState(null)
+  // Cita de la que se registra la consulta
+  const [consulting, setConsulting] = useState(null)
 
-  // Formatea la fecha actual en español
-  const fechaHoy = new Date().toLocaleDateString('es-MX', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-
-  const handleClickPaciente = (paciente) => {
-    navigate(`/nutriologo/pacientes/${paciente.id}`)
-  }
-
-  const handleRegistrarPaciente = () => {
-    // TODO: Conectar con el formulario de registro cuando se implemente
-    alert('Funcionalidad de registro de pacientes en desarrollo.')
-  }
+  const today = new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
-    <div className="space-y-6">
-      {/* Header de bienvenida */}
+    <div className="space-y-8">
       <div>
-        <h1 className="font-heading text-2xl font-semibold tracking-tight md:text-3xl">
-          Bienvenido, Dr. {nutriologoMock.nombre}
-        </h1>
-        <p className="mt-1 text-sm capitalize text-muted-foreground">
-          {fechaHoy}
-        </p>
+        <h1 className="font-heading text-2xl font-semibold tracking-tight md:text-3xl">Hola, {user.firstName}</h1>
+        <p className="mt-1 text-sm text-muted-foreground first-letter:uppercase">{today}</p>
       </div>
 
-      {/* Citas del día */}
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Citas de hoy</h2>
-        <CitasDelDia citas={citasDelDiaMock} />
-      </section>
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {/* Buscador + botón registrar */}
-      <section>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-medium">Mis pacientes</h2>
-          <div className="flex flex-1 items-center gap-3 sm:max-w-sm">
-            <BuscadorPacientes valor={busqueda} onChange={setBusqueda} />
-            <Button
-              id="btn-registrar-paciente"
-              onClick={handleRegistrarPaciente}
-              className="shrink-0"
-            >
-              <UserPlus className="size-4" data-icon="inline-start" />
-              <span className="hidden sm:inline">Registrar paciente</span>
-              <span className="sm:hidden">Nuevo</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Grid de tarjetas de pacientes */}
-        {pacientesFiltrados.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {pacientesFiltrados.map((paciente) => (
-              <PacienteCard
-                key={paciente.id}
-                paciente={paciente}
-                onClick={handleClickPaciente}
-              />
-            ))}
-          </div>
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">Citas de hoy</h2>
+        {loading && todayAppointments.length === 0 ? (
+          <Skeleton className="h-20 w-full" />
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-12 text-muted-foreground">
-            <p className="text-sm">
-              No se encontraron pacientes con &quot;{busqueda}&quot;
-            </p>
-          </div>
+          <CitasDelDia citas={todayAppointments} onSeleccionarCita={setSelected} />
         )}
       </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-medium">Calendario</h2>
+        <CalendarioHeader weekDays={weekDays} onMoverSemana={moveWeek} onAgendar={() => setScheduling({})} />
+        <CalendarioSemanal
+          weekDays={weekDays}
+          citas={appointments}
+          onAgendarEn={(date) => setScheduling({ initialDate: date })}
+          onSeleccionarCita={setSelected}
+        />
+      </section>
+
+      <CitaDetalleSheet
+        cita={selected}
+        onClose={() => setSelected(null)}
+        onReprogramar={(cita) => {
+          setSelected(null)
+          setScheduling({ appointment: cita })
+        }}
+        onRegistrarConsulta={(cita) => {
+          setSelected(null)
+          setConsulting(cita)
+        }}
+      />
+
+      <AgendarCitaModal
+        open={Boolean(scheduling)}
+        onOpenChange={(open) => !open && setScheduling(null)}
+        initialDate={scheduling?.initialDate}
+        appointment={scheduling?.appointment}
+      />
+
+      <RegistrarConsultaModal
+        open={Boolean(consulting)}
+        onOpenChange={(open) => !open && setConsulting(null)}
+        patientId={consulting?.patient._id}
+        appointment={consulting}
+      />
     </div>
   )
 }

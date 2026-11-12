@@ -10,6 +10,12 @@ import {
 } from '@/components/ui/alert-dialog'
 
 export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel = 'Confirmar', onConfirm }) {
+    // El botón de confirmar no cierra el diálogo solo: lo cerramos y luego hacemos la acción
+    function handleConfirm() {
+        onOpenChange(false)
+        onConfirm()
+    }
+
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
@@ -19,7 +25,7 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
+                    <AlertDialogAction onClick={handleConfirm}>{confirmLabel}</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

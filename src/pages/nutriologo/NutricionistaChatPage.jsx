@@ -1,84 +1,44 @@
 import { useState } from 'react'
-import {
-  pacientesMock,
-  conversacionesMock,
-} from '@/mocks/nutriologo'
+import { useSearchParams } from 'react-router-dom'
+import { toast } from '@/components/ui/toast'
 import { ChatListaConversaciones } from '@/components/nutriologo/ChatListaConversaciones'
 import { ChatVentanaConversacion } from '@/components/nutriologo/ChatVentanaConversacion'
 import { ChatEstadoVacio } from '@/components/nutriologo/ChatEstadoVacio'
+import { useConversations } from '@/hooks/useConversations'
+import { useMessages } from '@/hooks/useMessages'
+import { sendMessageRequest } from '@/api/messages'
 
 /**
- * Página principal de Chat del Nutriólogo con sus pacientes.
- * Inicia en estado vacío solicitando seleccionar una conversación,
- * permite buscar pacientes, consultar mensajes y enviar respuestas instantáneas.
+ * Mensajes del nutriólogo con sus pacientes, como bandeja de correo (no es en tiempo real).
+ * Se puede abrir directo una conversación con /nutriologo/chat?paciente=<id>
  */
 function NutricionistaChatPage() {
-  const [pacienteActivoId, setPacienteActivoId] = useState(null)
-  const [conversaciones, setConversaciones] = useState(conversacionesMock)
+  const [searchParams] = useSearchParams()
+  const [pacienteActivoId, setPacienteActivoId] = useState(searchParams.get('paciente'))
   const [busqueda, setBusqueda] = useState('')
+  const { conversations, error: conversationsError, reload: reloadConversations } = useConversations()
+  const { messages, loading, error, reload: reloadMessages } = useMessages(pacienteActivoId)
 
-  // Paciente y conversación activos
-  const pacienteActivo = pacientesMock.find((p) => p.id === pacienteActivoId)
-  const conversacionActiva = conversaciones.find(
-    (c) => c.pacienteId === pacienteActivoId
-  )
+  const conversacionActiva = conversations.find((conversacion) => conversacion.patient._id === pacienteActivoId)
 
-  const handleEnviarMensaje = (texto) => {
-    if (!pacienteActivoId) return
-
-    const ahora = new Date().toLocaleTimeString('es-MX', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    })
-
-    const nuevoMensaje = {
-      id: Date.now(),
-      remitente: 'nutriologo',
-      texto,
-      hora: ahora,
+  async function handleEnviarMensaje(body) {
+    try {
+      await sendMessageRequest({ patientId: pacienteActivoId, body })
+      reloadMessages()
+      reloadConversations()
+      return true
+    } catch (err) {
+      toast.add({ title: 'No se pudo enviar el mensaje', description: err.message, type: 'error' })
+      return false
     }
-
-    setConversaciones((prev) => {
-      const existe = prev.some((c) => c.pacienteId === pacienteActivoId)
-      if (existe) {
-        return prev.map((c) => {
-          if (c.pacienteId === pacienteActivoId) {
-            return {
-              ...c,
-              ultimoMensaje: texto,
-              fechaHoraUltimoMensaje: ahora,
-              mensajes: [...c.mensajes, nuevoMensaje],
-            }
-          }
-          return c
-        })
-      }
-
-      // Si es una conversación nueva
-      return [
-        ...prev,
-        {
-          pacienteId: pacienteActivoId,
-          ultimoMensaje: texto,
-          fechaHoraUltimoMensaje: ahora,
-          mensajes: [nuevoMensaje],
-        },
-      ]
-    })
   }
 
   return (
-    <div className="h-[calc(100svh-6rem)] md:h-[calc(100svh-4.5rem)] rounded-2xl md:rounded-3xl border border-border/70 bg-card shadow-xs overflow-hidden flex flex-col md:flex-row">
-      {/* Columna Izquierda: Lista de Pacientes (visible siempre en desktop; en móvil solo si no hay chat activo) */}
-      <div
-        className={`w-full md:w-80 lg:w-96 shrink-0 h-full ${
-          pacienteActivoId ? 'hidden md:block' : 'block'
-        }`}
-      >
+    <div className="flex h-[calc(100svh-6rem)] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-xs md:h-[calc(100svh-4.5rem)] md:flex-row md:rounded-3xl">
+      <div className={`h-full w-full shrink-0 md:w-80 lg:w-96 ${pacienteActivoId ? 'hidden md:block' : 'block'}`}>
+        {conversationsError && <p className="p-4 text-sm text-destructive">{conversationsError}</p>}
         <ChatListaConversaciones
-          pacientes={pacientesMock}
-          conversaciones={conversaciones}
+          conversaciones={conversations}
           pacienteActivoId={pacienteActivoId}
           onSeleccionarPaciente={setPacienteActivoId}
           busqueda={busqueda}
@@ -86,16 +46,14 @@ function NutricionistaChatPage() {
         />
       </div>
 
-      {/* Columna Derecha: Ventana de Conversación o Estado Vacío */}
-      <div
-        className={`flex-1 h-full overflow-hidden ${
-          !pacienteActivoId ? 'hidden md:block' : 'block'
-        }`}
-      >
-        {pacienteActivo ? (
+      <div className={`h-full flex-1 overflow-hidden ${pacienteActivoId ? 'block' : 'hidden md:block'}`}>
+        {conversacionActiva ? (
           <ChatVentanaConversacion
-            paciente={pacienteActivo}
-            conversacion={conversacionActiva}
+            paciente={conversacionActiva.patient}
+            mensajes={messages}
+            loading={loading}
+            error={error}
+            onActualizar={reloadMessages}
             onVolverALista={() => setPacienteActivoId(null)}
             onEnviarMensaje={handleEnviarMensaje}
           />

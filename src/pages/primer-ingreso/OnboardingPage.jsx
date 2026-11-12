@@ -5,63 +5,24 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FieldGroup, FieldLegend, FieldSet } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from '@/components/ui/toast'
 import { FormField } from '@/components/FormField'
 import { DatePicker } from '@/components/DatePicker'
+import { FormSelect } from '@/components/FormSelect'
 import PrimerIngresoLayout from '@/layouts/PrimerIngresoLayout'
 import { useAuth } from '@/context/AuthContext'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { completeOnboardingRequest } from '@/api/onboarding'
 import { getHomePath } from '@/lib/home-path'
 import { onboardingSchema } from '@/schemas/onboarding'
-
-// "pollo, arroz" -> ['pollo', 'arroz']
-const toList = (text) => (text || '').split(',').map((item) => item.trim()).filter(Boolean)
-// ['pollo', 'arroz'] -> "pollo, arroz"
-const toText = (list) => (list || []).join(', ')
-// "" -> undefined, "7" -> 7
-const toNumber = (text) => (text ? Number(text) : undefined)
+import { getAge } from '@/lib/dates'
+import { ALCOHOL_CONSUMPTION, SEX } from '@/lib/labels'
+import { toList, toNumber, toText } from '@/lib/lists'
 
 // Opciones de los selectores: { valor que se guarda: texto que se muestra }
-const SEX_OPTIONS = { female: 'Femenino', male: 'Masculino' }
 const SMOKING_OPTIONS = { no: 'No', yes: 'Sí' }
-const ALCOHOL_OPTIONS = { never: 'Nunca', occasional: 'Ocasionalmente', frequent: 'Frecuentemente' }
-
-// Edad cumplida a partir de "yyyy-MM-dd"
-function getAge(birthDate) {
-  if (!birthDate) return null
-  const [year, month, day] = birthDate.split('-').map(Number)
-  const today = new Date()
-  const hadBirthday = today.getMonth() + 1 > month || (today.getMonth() + 1 === month && today.getDate() >= day)
-  return today.getFullYear() - year - (hadBirthday ? 0 : 1)
-}
-
-// Select de shadcn conectado a React Hook Form con <Controller>
-function FormSelect({ control, name, id, options, placeholder = 'Elige una opción', invalid }) {
-  return (
-    <Controller
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <Select items={options} value={field.value || null} onValueChange={field.onChange}>
-          <SelectTrigger id={id} className="w-full" aria-invalid={invalid} onBlur={field.onBlur}>
-            <SelectValue placeholder={placeholder} />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(options).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
-    />
-  )
-}
 
 // Paso 2 del primer ingreso: el paciente completa su expediente
 function OnboardingPage() {
@@ -178,14 +139,22 @@ function OnboardingForm({ clinicalHistory }) {
               control={control}
               name="birthDate"
               render={({ field }) => (
-                <DatePicker id="birthDate" value={field.value} onChange={field.onChange} invalid={Boolean(errors.birthDate)} />
+                <DatePicker
+                  id="birthDate"
+                  value={field.value}
+                  onChange={field.onChange}
+                  invalid={Boolean(errors.birthDate)}
+                  fromDate={new Date(1920, 0, 1)}
+                  toDate={new Date()}
+                  defaultMonth={new Date(2000, 0)}
+                />
               )}
             />
             {age !== null && <p className="text-sm text-muted-foreground">{age} años</p>}
           </FormField>
 
           <FormField label="Sexo" htmlFor="sex" error={errors.sex}>
-            <FormSelect control={control} name="sex" id="sex" options={SEX_OPTIONS} invalid={Boolean(errors.sex)} />
+            <FormSelect control={control} name="sex" id="sex" options={SEX} invalid={Boolean(errors.sex)} />
           </FormField>
 
           <FormField label="Ocupación" htmlFor="occupation" error={errors.occupation}>
@@ -224,7 +193,7 @@ function OnboardingForm({ clinicalHistory }) {
           </FormField>
 
           <FormField label="¿Tomas alcohol?" htmlFor="alcoholConsumption" error={errors.alcoholConsumption}>
-            <FormSelect control={control} name="alcoholConsumption" id="alcoholConsumption" options={ALCOHOL_OPTIONS} />
+            <FormSelect control={control} name="alcoholConsumption" id="alcoholConsumption" options={ALCOHOL_CONSUMPTION} />
           </FormField>
 
           <FormField label="Actividad física" htmlFor="physicalActivity" error={errors.physicalActivity}>

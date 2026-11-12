@@ -1,173 +1,137 @@
-import { useMemo } from 'react'
-import { Plus, Video, MapPin, Clock } from 'lucide-react'
+import { MapPin, Video } from 'lucide-react'
+import { APPOINTMENT_STATUS, fullName } from '@/lib/labels'
+import { formatTime, isSameDay } from '@/lib/dates'
+import { GRID_HOURS, HOUR_HEIGHT, getAppointmentBox } from '@/lib/week-grid'
 
-const HORAS = [
-  '08:00',
-  '09:00',
-  '10:00',
-  '11:00',
-  '12:00',
-  '13:00',
-  '14:00',
-  '15:00',
-  '16:00',
-  '17:00',
-  '18:00',
-]
+const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+// Cada hora tiene dos espacios de 30 minutos en los que se puede agendar
+const HALF_HOURS = GRID_HOURS.flatMap((hour) => [
+  { hour, minutes: 0 },
+  { hour, minutes: 30 },
+])
 
 /**
- * Cuadrícula de calendario en vista semanal por franjas horarias.
+ * Calendario de la semana por horas (8:00 a 20:00).
+ * El fondo es el espacio libre: al hacer clic en él se agenda una cita a esa hora.
+ * Cada cita es un bloque del color de su estado, con la altura de su duración.
+ * Las canceladas solo aparecen en las citas de hoy.
  */
-export function CalendarioSemanal({
-  fechaReferencia,
-  citas = [],
-  onSeleccionarDia,
-  onAgendarEnFecha,
-}) {
-  // Formato YYYY-MM-DD para comparar hoy
-  const hoyStr = useMemo(() => {
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-      d.getDate()
-    ).padStart(2, '0')}`
-  }, [])
-
-  // Calcular los 7 días de la semana actual (de Lunes a Domingo)
-  const diasSemana = useMemo(() => {
-    const d = new Date(fechaReferencia)
-    const diaSemana = d.getDay()
-    // Distancia al lunes anterior (o mismo día si es lunes)
-    const difAlLunes = diaSemana === 0 ? -6 : 1 - diaSemana
-    const lunes = new Date(d.setDate(d.getDate() + difAlLunes))
-
-    const dias = []
-    const nombresDias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-
-    for (let i = 0; i < 7; i++) {
-      const fechaDia = new Date(lunes)
-      fechaDia.setDate(lunes.getDate() + i)
-
-      const fechaStr = `${fechaDia.getFullYear()}-${String(
-        fechaDia.getMonth() + 1
-      ).padStart(2, '0')}-${String(fechaDia.getDate()).padStart(2, '0')}`
-
-      dias.push({
-        nombre: nombresDias[i],
-        numero: fechaDia.getDate(),
-        fechaStr,
-        fechaObj: fechaDia,
-      })
-    }
-    return dias
-  }, [fechaReferencia])
-
-  // Agrupar citas por fecha
-  const citasPorFecha = useMemo(() => {
-    const mapa = {}
-    citas.forEach((c) => {
-      if (!mapa[c.fecha]) mapa[c.fecha] = []
-      mapa[c.fecha].push(c)
-    })
-    return mapa
-  }, [citas])
+export function CalendarioSemanal({ weekDays, citas, onAgendarEn, onSeleccionarCita }) {
+  const now = new Date()
 
   return (
-    <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-x-auto">
-      <div className="min-w-[700px]">
-        {/* Encabezado con los 7 días de la semana */}
-        <div className="grid grid-cols-8 border-b border-border/70 bg-muted/40 text-center py-3">
-          <div className="text-xs font-semibold text-muted-foreground flex items-center justify-center">
-            <Clock className="size-3.5" />
-          </div>
-          {diasSemana.map((dia) => {
-            const esHoy = dia.fechaStr === hoyStr
-            return (
-              <div
-                key={dia.fechaStr}
-                onClick={() => onSeleccionarDia(dia.fechaStr)}
-                className="cursor-pointer flex flex-col items-center gap-1 group"
-              >
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  {dia.nombre}
-                </span>
-                <span
-                  className={`font-mono text-sm font-semibold inline-flex size-7 items-center justify-center rounded-full transition-all ${
-                    esHoy
-                      ? 'bg-primary text-primary-foreground shadow-xs font-bold'
-                      : 'text-foreground group-hover:bg-muted'
-                  }`}
-                >
-                  {dia.numero}
-                </span>
-              </div>
-            )
-          })}
-        </div>
+    <div className="space-y-3">
+      {/* Leyenda de colores */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span className="size-3 rounded-sm border border-border bg-card" />
+          Libre
+        </span>
+        {Object.entries(APPOINTMENT_STATUS)
+          .filter(([key]) => key !== 'cancelled')
+          .map(([key, status]) => (
+          <span key={key} className="flex items-center gap-1.5">
+            <span className={`size-3 rounded-sm border ${status.className}`} />
+            {status.label}
+          </span>
+        ))}
+        <span className="flex items-center gap-1.5">
+          <span className="size-3 rounded-sm bg-muted/70" />
+          Ya pasó
+        </span>
+      </div>
 
-        {/* Franjas horarias */}
-        <div className="divide-y divide-border/50">
-          {HORAS.map((hora) => (
-            <div key={hora} className="grid grid-cols-8 min-h-[64px]">
-              {/* Columna de la hora */}
-              <div className="border-r border-border/50 p-2 text-right text-xs font-mono text-muted-foreground flex items-start justify-end">
-                {hora}
-              </div>
-
-              {/* 7 Columnas de días */}
-              {diasSemana.map((dia) => {
-                const citasDelDia = citasPorFecha[dia.fechaStr] || []
-                // Citas que caen en esta hora (comparando HH)
-                const horaNum = parseInt(hora.split(':')[0], 10)
-                const citasEnHora = citasDelDia.filter((c) => {
-                  const [h] = c.hora.split(':')
-                  return parseInt(h, 10) === horaNum
-                })
-
-                return (
-                  <div
-                    key={`${dia.fechaStr}-${hora}`}
-                    onClick={() => onSeleccionarDia(dia.fechaStr)}
-                    className="border-r border-border/40 last:border-r-0 p-1 hover:bg-muted/30 transition-colors cursor-pointer group relative"
+      <div className="overflow-x-auto rounded-xl border border-border/70 bg-card shadow-xs">
+        <div className="min-w-[760px]">
+          {/* Encabezado con los 7 días */}
+          <div className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-border/70 bg-muted/40 py-2 text-center">
+            <span />
+            {weekDays.map((day, index) => {
+              const isToday = isSameDay(day, now)
+              return (
+                <div key={day.toISOString()} className="flex flex-col items-center gap-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {DAY_NAMES[index]}
+                  </span>
+                  <span
+                    className={`inline-flex size-7 items-center justify-center rounded-full text-sm font-semibold ${
+                      isToday ? 'bg-primary text-primary-foreground' : 'text-foreground'
+                    }`}
                   >
-                    {/* Botón flotante para agregar cita en esta celda */}
-                    <button
-                      type="button"
-                      aria-label={`Agendar cita a las ${hora}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onAgendarEnFecha(dia.fechaStr)
-                      }}
-                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-muted-foreground hover:bg-primary/20 hover:text-primary z-10"
-                    >
-                      <Plus className="size-3" />
-                    </button>
+                    {day.getDate()}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
 
-                    {/* Citas programadas en esta hora */}
-                    <div className="space-y-1">
-                      {citasEnHora.map((cita) => (
-                        <div
-                          key={cita.id}
-                          className="rounded-md border border-primary/30 bg-primary/10 p-1.5 text-xs text-foreground hover:shadow-xs transition-shadow"
-                        >
-                          <div className="flex items-center gap-1 font-semibold text-[11px] text-primary">
-                            {cita.modalidad === 'Online' ? (
-                              <Video className="size-3 text-blue-500" />
-                            ) : (
-                              <MapPin className="size-3 text-primary" />
-                            )}
-                            <span className="font-mono">{cita.hora}</span>
-                          </div>
-                          <p className="font-medium text-[11px] truncate mt-0.5">
-                            {cita.pacienteNombre}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
+          {/* Cuadrícula */}
+          <div className="grid grid-cols-[56px_repeat(7,1fr)]">
+            {/* Columna de las horas */}
+            <div>
+              {GRID_HOURS.map((hour) => (
+                <div
+                  key={hour}
+                  style={{ height: HOUR_HEIGHT }}
+                  className="border-r border-border/50 pr-2 pt-1 text-right font-mono text-xs text-muted-foreground"
+                >
+                  {String(hour).padStart(2, '0')}:00
+                </div>
+              ))}
             </div>
-          ))}
+
+            {weekDays.map((day) => {
+              // Las canceladas no ocupan el horario, así que no se dibujan
+              const citasDelDia = citas.filter((cita) => cita.status !== 'cancelled' && isSameDay(cita.dateTime, day))
+              return (
+                <div key={day.toISOString()} className="relative border-r border-border/40 last:border-r-0">
+                  {/* Espacios de 30 minutos: libres (se puede agendar) o ya pasados */}
+                  {HALF_HOURS.map(({ hour, minutes }) => {
+                    const start = new Date(day)
+                    start.setHours(hour, minutes, 0, 0)
+                    const isPast = start <= now
+                    const label = `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        disabled={isPast}
+                        onClick={() => onAgendarEn(start)}
+                        aria-label={`Agendar el ${day.toLocaleDateString('es-MX')} a las ${label}`}
+                        style={{ height: HOUR_HEIGHT / 2 }}
+                        className={`block w-full ${minutes === 0 ? 'border-t border-border/50' : 'border-t border-dashed border-border/30'} ${
+                          isPast ? 'cursor-default bg-muted/70' : 'hover:bg-primary/10'
+                        }`}
+                      />
+                    )
+                  })}
+
+                  {/* Citas del día */}
+                  {citasDelDia.map((cita) => {
+                    const box = getAppointmentBox(cita)
+                    const status = APPOINTMENT_STATUS[cita.status]
+                    const ModalityIcon = cita.modality === 'video-call' ? Video : MapPin
+                    return (
+                      <button
+                        key={cita._id}
+                        type="button"
+                        onClick={() => onSeleccionarCita(cita)}
+                        style={{ top: box.top + 1, height: box.height - 2 }}
+                        className={`absolute inset-x-1 overflow-hidden rounded-md border px-1.5 py-1 text-left text-[11px] shadow-2xs transition-shadow hover:shadow-md ${status.className}`}
+                      >
+                        <span className="flex items-center gap-1 font-semibold">
+                          <ModalityIcon className="size-3 shrink-0" />
+                          {formatTime(cita.dateTime)}
+                        </span>
+                        <span className="block truncate font-medium">{fullName(cita.patient)}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>

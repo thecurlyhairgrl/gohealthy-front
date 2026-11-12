@@ -44,3 +44,12 @@ export const changePasswordSchema = z
     confirmPassword: z.string(),
   })
   .refine(...passwordsMatch('newPassword'))
+
+// Cambio de contraseña desde el perfil
+export const profilePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Escribe tu contraseña actual'),
+    newPassword,
+    confirmPassword: z.string(),
+  })
+  .refine(...passwordsMatch('newPassword'))

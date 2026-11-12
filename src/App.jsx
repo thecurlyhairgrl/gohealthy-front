@@ -9,7 +9,7 @@ import RecoveryPage from '@/pages/auth/RecoveryPage'
 import ChangeTemporaryPasswordPage from '@/pages/primer-ingreso/ChangeTemporaryPasswordPage'
 import OnboardingPage from '@/pages/primer-ingreso/OnboardingPage'
 import NutricionistaDashboardPage from '@/pages/nutriologo/NutricionistaDashboardPage'
-import NutricionistaCalendarioPage from '@/pages/nutriologo/NutricionistaCalendarioPage'
+import NutricionistaPacientesPage from '@/pages/nutriologo/NutricionistaPacientesPage'
 import NutricionistaPacienteDetallePage from '@/pages/nutriologo/NutricionistaPacienteDetallePage'
 import NutricionistaChatPage from '@/pages/nutriologo/NutricionistaChatPage'
 import NutricionistaPerfilPage from '@/pages/nutriologo/NutricionistaPerfilPage'
@@ -40,7 +40,7 @@ function App() {
         <Route path="/nutriologo" element={<NutricionistaLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<NutricionistaDashboardPage />} />
-          <Route path="calendario" element={<NutricionistaCalendarioPage />} />
+          <Route path="pacientes" element={<NutricionistaPacientesPage />} />
           <Route path="pacientes/:id" element={<NutricionistaPacienteDetallePage />} />
           <Route path="chat" element={<NutricionistaChatPage />} />
           <Route path="perfil" element={<NutricionistaPerfilPage />} />

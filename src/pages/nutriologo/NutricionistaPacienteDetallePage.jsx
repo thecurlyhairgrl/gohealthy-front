@@ -1,167 +1,164 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { Activity, Utensils, FileText, HeartPulse, ArrowLeft } from 'lucide-react'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { useParams } from 'react-router-dom'
+import { Activity, ClipboardList, FileText, HeartPulse, Utensils } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from '@/components/ui/toast'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import ExpedienteHeroCard from '@/components/nutriologo/ExpedienteHeroCard'
-import ExpedienteProgresoTab from '@/components/nutriologo/ExpedienteProgresoTab'
-import ExpedientePlanTab from '@/components/nutriologo/ExpedientePlanTab'
-import ExpedienteDocumentosTab from '@/components/nutriologo/ExpedienteDocumentosTab'
 import ExpedienteClinicoTab from '@/components/nutriologo/ExpedienteClinicoTab'
-import { pacientesMock } from '@/mocks/nutriologo'
+import ExpedienteConsultasTab from '@/components/nutriologo/ExpedienteConsultasTab'
+import ExpedienteProgresoTab from '@/components/nutriologo/ExpedienteProgresoTab'
+import ExpedienteDocumentosTab from '@/components/nutriologo/ExpedienteDocumentosTab'
+import ExpedientePlanTab from '@/components/nutriologo/ExpedientePlanTab'
+import EditarPacienteModal from '@/components/nutriologo/EditarPacienteModal'
+import AgendarCitaModal from '@/components/nutriologo/AgendarCitaModal'
+import RegistrarConsultaModal from '@/components/nutriologo/RegistrarConsultaModal'
+import { usePatients } from '@/context/PatientsContext'
+import { usePatientDetail } from '@/hooks/usePatientDetail'
+import { useConsultations } from '@/hooks/useConsultations'
+import { useProgress } from '@/hooks/useProgress'
+import { resendAccessRequest } from '@/api/patients'
+import { fullName } from '@/lib/labels'
+import { getWeightHistory } from '@/lib/weights'
+
+const TABS = [
+  { value: 'clinico', label: 'Historia clínica', icon: HeartPulse },
+  { value: 'consultas', label: 'Consultas', icon: ClipboardList },
+  { value: 'progreso', label: 'Progreso', icon: Activity },
+  { value: 'documentos', label: 'Documentos', icon: FileText },
+  { value: 'plan', label: 'Plan', icon: Utensils },
+]
 
 /**
- * Página de Detalle del Paciente / Expediente Clínico.
- * Agrupa la información en pestañas: Progreso, Plan Alimenticio, Documentos y Datos Clínicos.
+ * Expediente de un paciente.
  */
 function NutricionistaPacienteDetallePage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const { editPatient } = usePatients()
+  const { detail, loading, error, reload } = usePatientDetail(id)
+  const consultationsState = useConsultations(id)
+  const progressState = useProgress(id)
 
-  const pacienteInicial = pacientesMock.find((p) => String(p.id) === String(id))
-  const [paciente, setPaciente] = useState(pacienteInicial)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false)
+  const [isConsultationOpen, setIsConsultationOpen] = useState(false)
+  const [confirmToggle, setConfirmToggle] = useState(false)
 
-  if (!paciente) {
+  if (loading) {
     return (
-      <div className="max-w-5xl mx-auto py-12">
-        <Card className="border-border/60 text-center py-10">
-          <CardContent className="space-y-4">
-            <h2 className="text-xl font-bold font-heading">Paciente no encontrado</h2>
-            <p className="text-sm text-muted-foreground">
-              El paciente con ID #{id} no existe o no está registrado en tu lista activa.
-            </p>
-            <Button
-              onClick={() => navigate('/nutriologo/dashboard')}
-              className="gap-2 bg-[#2F6B4E] text-white hover:bg-[#2F6B4E]/90"
-            >
-              <ArrowLeft className="size-4" />
-              <span>Volver al Dashboard</span>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="space-y-4">
+        <Skeleton className="h-48 w-full rounded-xl" />
+        <Skeleton className="h-80 w-full rounded-xl" />
       </div>
     )
   }
+  if (error) return <p className="text-sm text-destructive">{error}</p>
 
-  const handleActualizarSesion = (nuevaSesion) => {
-    setPaciente((prev) => {
-      // 1. Recalcular IMC con estatura
-      const alturaM = parseFloat(prev.estatura) || 1.70
-      const imcNum = (nuevaSesion.peso / (alturaM * alturaM)).toFixed(1)
-      let imcClasificacion = 'Normal'
-      if (imcNum < 18.5) imcClasificacion = 'Bajo peso'
-      else if (imcNum >= 25 && imcNum < 30) imcClasificacion = 'Sobrepeso'
-      else if (imcNum >= 30) imcClasificacion = 'Obesidad'
-      const nuevoImc = `${imcNum} (${imcClasificacion})`
+  const { patient, clinicalHistory } = detail
+  const lastConsultation = consultationsState.consultations[0]
+  // El peso actual es el registro más reciente, sea de una consulta o del paciente
+  const weights = getWeightHistory(consultationsState.consultations, progressState.progress?.measurements || [])
 
-      // 2. Recalcular porcentaje de avance hacia la meta
-      let nuevoProgreso = prev.progreso
-      const pInicial = Number(prev.pesoInicial)
-      const pMeta = Number(prev.pesoMeta)
-      const pNuevo = Number(nuevaSesion.peso)
+  async function handleResendAccess() {
+    try {
+      await resendAccessRequest(patient._id)
+      toast.add({ title: 'Acceso reenviado', description: 'Le enviamos una contraseña temporal nueva', type: 'success' })
+    } catch (err) {
+      toast.add({ title: 'No se pudo reenviar el acceso', description: err.message, type: 'error' })
+    }
+  }
 
-      if (pInicial > pMeta) {
-        // Pérdida de peso
-        const totalReducir = pInicial - pMeta
-        const reducido = pInicial - pNuevo
-        nuevoProgreso = Math.min(100, Math.max(0, Math.round((reducido / totalReducir) * 100)))
-      } else if (pInicial < pMeta) {
-        // Aumento de peso
-        const totalAumentar = pMeta - pInicial
-        const aumentado = pNuevo - pInicial
-        nuevoProgreso = Math.min(100, Math.max(0, Math.round((aumentado / totalAumentar) * 100)))
-      }
+  async function handleToggleActive() {
+    try {
+      await editPatient(patient._id, { active: !patient.active })
+      toast.add({ title: patient.active ? 'Paciente desactivado' : 'Paciente reactivado', type: 'success' })
+      reload()
+    } catch (err) {
+      toast.add({ title: 'No se pudo cambiar el estado', description: err.message, type: 'error' })
+    }
+  }
 
-      // 3. Añadir sesión al historial cronológico
-      const nuevoHistorial = [
-        {
-          fecha: nuevaSesion.fecha,
-          peso: nuevaSesion.peso,
-          nota: nuevaSesion.nota,
-        },
-        ...(prev.antecedentes?.historialConsultas || []),
-      ]
-
-      return {
-        ...prev,
-        pesoActual: nuevaSesion.peso,
-        progreso: nuevoProgreso,
-        imc: nuevoImc,
-        grasaCorporal: nuevaSesion.grasaCorporal || prev.grasaCorporal,
-        ultimaConsulta: nuevaSesion.fecha,
-        consultasTotales: (prev.consultasTotales || 0) + 1,
-        antecedentes: {
-          ...prev.antecedentes,
-          historialConsultas: nuevoHistorial,
-        },
-      }
-    })
+  // Después de una consulta cambian el historial, el peso y la última consulta
+  function handleConsultationSaved() {
+    consultationsState.reload()
+    progressState.reload()
+    reload()
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Tarjeta Hero del Paciente con estatura, avatar, contacto y botón de chat */}
-      <ExpedienteHeroCard paciente={paciente} />
+    <div className="space-y-6">
+      <ExpedienteHeroCard
+        detail={detail}
+        currentWeightKg={weights.at(-1)?.weight}
+        lastConsultationDate={lastConsultation?.date}
+        onEdit={() => setIsEditOpen(true)}
+        onSchedule={() => setIsScheduleOpen(true)}
+        onResendAccess={handleResendAccess}
+        onToggleActive={() => setConfirmToggle(true)}
+      />
 
-      {/* Pestañas del Expediente Clínico */}
-      <Tabs defaultValue="progreso" className="w-full space-y-6">
-        <div className="border-b border-border/60 pb-3">
-          <TabsList className="bg-muted/60 p-1 flex flex-wrap h-auto w-fit gap-1 rounded-xl">
-            <TabsTrigger
-              value="progreso"
-              className="gap-2 px-4 py-2 text-xs sm:text-sm font-medium data-active:bg-background data-active:text-[#2F6B4E] data-active:shadow-xs rounded-lg"
-            >
-              <Activity className="size-4" />
-              <span>Resumen y Progreso</span>
+      <Tabs defaultValue="clinico">
+        <TabsList className="h-auto w-full flex-wrap justify-start">
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              <tab.icon />
+              {tab.label}
             </TabsTrigger>
+          ))}
+        </TabsList>
 
-            <TabsTrigger
-              value="plan"
-              className="gap-2 px-4 py-2 text-xs sm:text-sm font-medium data-active:bg-background data-active:text-[#2F6B4E] data-active:shadow-xs rounded-lg"
-            >
-              <Utensils className="size-4" />
-              <span>Plan Alimenticio</span>
-            </TabsTrigger>
-
-            <TabsTrigger
-              value="documentos"
-              className="gap-2 px-4 py-2 text-xs sm:text-sm font-medium data-active:bg-background data-active:text-[#2F6B4E] data-active:shadow-xs rounded-lg"
-            >
-              <FileText className="size-4" />
-              <span>Documentos ({paciente.documentos?.length || 0})</span>
-            </TabsTrigger>
-
-            <TabsTrigger
-              value="clinicos"
-              className="gap-2 px-4 py-2 text-xs sm:text-sm font-medium data-active:bg-background data-active:text-[#2F6B4E] data-active:shadow-xs rounded-lg"
-            >
-              <HeartPulse className="size-4" />
-              <span>Datos Clínicos</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value="progreso" className="focus-visible:outline-none">
-          <ExpedienteProgresoTab
-            paciente={paciente}
-            onActualizarSesion={handleActualizarSesion}
+        <TabsContent value="clinico" className="pt-4">
+          <ExpedienteClinicoTab patientId={id} clinicalHistory={clinicalHistory} onSaved={reload} />
+        </TabsContent>
+        <TabsContent value="consultas" className="pt-4">
+          <ExpedienteConsultasTab
+            consultations={consultationsState.consultations}
+            loading={consultationsState.loading}
+            error={consultationsState.error}
+            canRegister={patient.active}
+            onRegister={() => setIsConsultationOpen(true)}
           />
         </TabsContent>
-
-        <TabsContent value="plan" className="focus-visible:outline-none">
-          <ExpedientePlanTab planInicial={paciente.planAlimenticio} />
+        <TabsContent value="progreso" className="pt-4">
+          <ExpedienteProgresoTab
+            progress={progressState.progress}
+            weights={weights}
+            loading={progressState.loading || consultationsState.loading}
+            error={progressState.error}
+            weightGoalKg={clinicalHistory.weightGoalKg}
+          />
         </TabsContent>
-
-        <TabsContent value="documentos" className="focus-visible:outline-none">
-          <ExpedienteDocumentosTab documentos={paciente.documentos} />
+        <TabsContent value="documentos" className="pt-4">
+          <ExpedienteDocumentosTab patientId={id} />
         </TabsContent>
-
-        <TabsContent value="clinicos" className="focus-visible:outline-none">
-          <ExpedienteClinicoTab antecedentes={paciente.antecedentes} />
+        <TabsContent value="plan" className="pt-4">
+          <ExpedientePlanTab patientId={id} />
         </TabsContent>
       </Tabs>
+
+      <EditarPacienteModal open={isEditOpen} onOpenChange={setIsEditOpen} patient={patient} onSaved={reload} />
+      <AgendarCitaModal open={isScheduleOpen} onOpenChange={setIsScheduleOpen} patientId={patient._id} />
+      <RegistrarConsultaModal
+        open={isConsultationOpen}
+        onOpenChange={setIsConsultationOpen}
+        patientId={patient._id}
+        onSaved={handleConsultationSaved}
+      />
+      <ConfirmDialog
+        open={confirmToggle}
+        onOpenChange={setConfirmToggle}
+        title={patient.active ? `¿Desactivar a ${fullName(patient)}?` : `¿Reactivar a ${fullName(patient)}?`}
+        description={
+          patient.active
+            ? 'Ya no podrá iniciar sesión ni aparecerá en tu lista. Su expediente se conserva y puedes reactivarlo.'
+            : 'Podrá volver a iniciar sesión y aparecerá en tu lista.'
+        }
+        confirmLabel={patient.active ? 'Desactivar' : 'Reactivar'}
+        onConfirm={handleToggleActive}
+      />
     </div>
   )
 }
+
 export default NutricionistaPacienteDetallePage

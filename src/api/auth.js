@@ -31,3 +31,8 @@ export function verifyOtpRequest(data) {
 export function resetPasswordRequest(data) {
     return apiFetch('/auth/reset-password', { method: 'POST', body: data })
 }
+export function uploadAvatarRequest(file) {
+  const formData = new FormData()
+  formData.append('image', file)
+  return apiFetch('/auth/me/avatar', { method: 'POST', body: formData })
+}

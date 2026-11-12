@@ -1,13 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Clock, User } from 'lucide-react'
+import { Clock, MapPin, Video } from 'lucide-react'
+import { APPOINTMENT_MODALITY, APPOINTMENT_STATUS, fullName } from '@/lib/labels'
+import { formatTime } from '@/lib/dates'
 
 /**
- * Muestra la lista de citas programadas para el día actual.
- * Recibe un array de citas con hora, paciente y tipo.
+ * Citas de hoy. La hora es lo primero que se ve, en grande.
+ * Al hacer clic en una cita se abre su detalle.
  */
-function CitasDelDia({ citas }) {
-  if (!citas || citas.length === 0) {
+function CitasDelDia({ citas, onSeleccionarCita }) {
+  if (citas.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-8 text-muted-foreground">
@@ -19,28 +21,37 @@ function CitasDelDia({ citas }) {
   }
 
   return (
-    <div className="grid gap-3">
-      {citas.map((cita) => (
-        <Card key={cita.id} size="sm">
-          <CardContent className="flex items-center gap-4">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Clock className="size-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm font-medium">{cita.hora}</span>
-                <span className="text-sm text-muted-foreground">—</span>
-                <span className="truncate text-sm font-medium">{cita.paciente}</span>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {citas.map((cita) => {
+        const status = APPOINTMENT_STATUS[cita.status]
+        const ModalityIcon = cita.modality === 'video-call' ? Video : MapPin
+        return (
+          <Card
+            key={cita._id}
+            size="sm"
+            role="button"
+            tabIndex={0}
+            onClick={() => onSeleccionarCita(cita)}
+            onKeyDown={(event) => event.key === 'Enter' && onSeleccionarCita(cita)}
+            className="cursor-pointer transition-shadow hover:shadow-md"
+          >
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-heading text-2xl font-semibold tabular-nums text-primary">{formatTime(cita.dateTime)}</span>
+                <Badge variant="outline" className={status.className}>
+                  {status.label}
+                </Badge>
               </div>
-              <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                <User className="size-3" />
-                <span>{cita.tipo}</span>
-              </div>
-            </div>
-            <Badge variant="secondary">{cita.tipo}</Badge>
-          </CardContent>
-        </Card>
-      ))}
+              <p className="truncate font-medium">{fullName(cita.patient)}</p>
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <ModalityIcon className="size-3" />
+                {APPOINTMENT_MODALITY[cita.modality]}
+                {cita.reason && ` · ${cita.reason}`}
+              </p>
+            </CardContent>
+          </Card>
+        )
+      })}
     </div>
   )
 }

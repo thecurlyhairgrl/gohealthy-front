@@ -8,12 +8,16 @@ import { Send } from 'lucide-react'
  */
 export function ChatInputMensaje({ onEnviarMensaje, pacienteNombre }) {
   const [texto, setTexto] = useState('')
+  const [enviando, setEnviando] = useState(false)
 
-  const handleSubmit = (e) => {
+  // Solo se limpia el campo si el mensaje se envió bien
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!texto.trim()) return
-    onEnviarMensaje(texto.trim())
-    setTexto('')
+    setEnviando(true)
+    const enviado = await onEnviarMensaje(texto.trim())
+    setEnviando(false)
+    if (enviado) setTexto('')
   }
 
   return (
@@ -31,7 +35,7 @@ export function ChatInputMensaje({ onEnviarMensaje, pacienteNombre }) {
       />
       <Button
         type="submit"
-        disabled={!texto.trim()}
+        disabled={!texto.trim() || enviando}
         size="icon"
         className="shrink-0 size-10 rounded-lg cursor-pointer"
         aria-label="Enviar mensaje"

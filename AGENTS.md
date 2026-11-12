@@ -14,7 +14,7 @@ GoHealthy conecta nutriólogos con sus pacientes: seguimiento de alimentación, 
 
 ## Estado del proyecto
 
-El front se está reorganizando con la guía. Los archivos ya están en la estructura nueva (paso 1.3). Las pantallas todavía usan los datos de prueba de `src/mocks/`; se van conectando a la API con la guía. **No agregues datos de prueba nuevos.**
+El front se está reorganizando con la guía. Ya están conectadas a la API la sesión (Parte 1) y las pantallas del nutriólogo (Parte 2). Las del paciente todavía usan los datos de prueba de `src/mocks/paciente.js`. **No agregues datos de prueba nuevos.** Antes de crear una utilidad, revisa `src/lib/` (fechas, textos, listas, horarios, pesos) y los componentes compartidos (`FormField`, `FormSelect`, `DatePicker`, `ConfirmDialog`).
 
 ## Stack
 

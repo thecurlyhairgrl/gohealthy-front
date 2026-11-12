@@ -1,119 +1,73 @@
-import { useMemo } from 'react'
 import { Input } from '@/components/ui/input'
-import { Search, User } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Search } from 'lucide-react'
+import { fullName, initials } from '@/lib/labels'
+import { formatDate, formatTime, isSameDay } from '@/lib/dates'
+import { getImageUrl } from '@/lib/image-url'
 
 /**
- * Columna lateral con el buscador y la lista directa de todos los pacientes del nutriólogo.
+ * Columna con el buscador y una conversación por paciente, ordenadas por el mensaje más reciente.
  */
-export function ChatListaConversaciones({
-  pacientes = [],
-  conversaciones = [],
-  pacienteActivoId,
-  onSeleccionarPaciente,
-  busqueda,
-  onCambiarBusqueda,
-}) {
-  // Mapa de conversaciones por pacienteId
-  const mapaConversaciones = useMemo(() => {
-    const mapa = {}
-    conversaciones.forEach((c) => {
-      mapa[c.pacienteId] = c
-    })
-    return mapa
-  }, [conversaciones])
-
-  // Filtrado de pacientes por nombre
-  const pacientesFiltrados = useMemo(() => {
-    if (!busqueda.trim()) return pacientes
-    const query = busqueda.toLowerCase()
-    return pacientes.filter((p) => p.nombre.toLowerCase().includes(query))
-  }, [pacientes, busqueda])
+export function ChatListaConversaciones({ conversaciones, pacienteActivoId, onSeleccionarPaciente, busqueda, onCambiarBusqueda }) {
+  const term = busqueda.trim().toLowerCase()
+  const visibles = conversaciones.filter((conversacion) => fullName(conversacion.patient).toLowerCase().includes(term))
 
   return (
-    <div className="flex flex-col h-full border-r border-border/70 bg-card">
-      {/* Cabecera de la lista con buscador */}
-      <div className="p-4 border-b border-border/60 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading text-lg font-bold text-foreground">
-            Mensajes
-          </h2>
-          <span className="text-xs font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-            {pacientes.length} pacientes
-          </span>
-        </div>
-
-        {/* Buscador */}
+    <div className="flex h-full flex-col border-r border-border/70 bg-card">
+      <div className="space-y-3 border-b border-border/60 p-4">
+        <h2 className="font-heading text-lg font-bold">Mensajes</h2>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Buscar paciente..."
             value={busqueda}
-            onChange={(e) => onCambiarBusqueda(e.target.value)}
-            className="pl-9 text-xs h-9 bg-background"
-            aria-label="Buscar paciente para chatear"
+            onChange={(event) => onCambiarBusqueda(event.target.value)}
+            className="h-9 bg-background pl-9 text-xs"
+            aria-label="Buscar paciente"
           />
         </div>
       </div>
 
-      {/* Lista de pacientes */}
-      <div className="flex-1 overflow-y-auto divide-y divide-border/40">
-        {pacientesFiltrados.length === 0 ? (
-          <div className="p-8 text-center text-xs text-muted-foreground">
-            No se encontraron pacientes con &quot;{busqueda}&quot;
-          </div>
+      <div className="flex-1 divide-y divide-border/40 overflow-y-auto">
+        {visibles.length === 0 ? (
+          <p className="p-8 text-center text-xs text-muted-foreground">
+            {conversaciones.length === 0 ? 'Aún no tienes pacientes activos' : `No se encontraron pacientes con "${busqueda}"`}
+          </p>
         ) : (
-          pacientesFiltrados.map((paciente) => {
-            const conv = mapaConversaciones[paciente.id]
-            const esActivo = paciente.id === pacienteActivoId
-            const iniciales = paciente.nombre
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .slice(0, 2)
-
-            const ultimoMensaje =
-              conv?.ultimoMensaje || 'Sin mensajes previos'
-            const hora = conv?.fechaHoraUltimoMensaje || ''
-
+          visibles.map(({ patient, lastMessage, unread }) => {
+            const isActive = patient._id === pacienteActivoId
+            // La conversación abierta ya se marcó como leída
+            const pending = isActive ? 0 : unread
             return (
               <button
-                key={paciente.id}
+                key={patient._id}
                 type="button"
-                onClick={() => onSeleccionarPaciente(paciente.id)}
-                className={`w-full text-left p-3.5 flex items-start gap-3 transition-colors cursor-pointer hover:bg-muted/40 ${
-                  esActivo ? 'bg-primary/10 border-l-4 border-primary' : ''
+                onClick={() => onSeleccionarPaciente(patient._id)}
+                className={`flex w-full items-start gap-3 p-3.5 text-left transition-colors hover:bg-muted/40 ${
+                  isActive ? 'border-l-4 border-primary bg-primary/10' : ''
                 }`}
               >
-                {/* Avatar del paciente */}
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-heading font-semibold text-xs border border-primary/20">
-                  {iniciales ? (
-                    <span>{iniciales}</span>
-                  ) : (
-                    <User className="size-4" />
-                  )}
-                </div>
-
-                {/* Detalles de la conversación */}
+                <Avatar className="size-10">
+                  <AvatarImage src={getImageUrl(patient.avatarUrl)} alt="" />
+                  <AvatarFallback className="bg-primary/20 text-xs text-primary">{initials(patient)}</AvatarFallback>
+                </Avatar>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-1">
-                    <h3 className="text-sm font-semibold text-foreground truncate">
-                      {paciente.nombre}
-                    </h3>
-                    {hora && (
-                      <span className="text-[10px] font-mono text-muted-foreground shrink-0">
-                        {hora}
+                    <h3 className={`truncate text-sm ${pending > 0 ? 'font-bold' : 'font-semibold'}`}>{fullName(patient)}</h3>
+                    {lastMessage && (
+                      <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                        {isSameDay(lastMessage.createdAt, new Date()) ? formatTime(lastMessage.createdAt) : formatDate(lastMessage.createdAt)}
                       </span>
                     )}
                   </div>
-
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {ultimoMensaje}
-                  </p>
-
-                  <span className="inline-block text-[10px] text-muted-foreground/80 bg-muted/60 px-1.5 py-0.5 rounded mt-1.5 font-medium truncate max-w-full">
-                    {paciente.objetivo}
-                  </span>
+                  <div className="mt-0.5 flex items-center justify-between gap-2">
+                    <p className="truncate text-xs text-muted-foreground">
+                      {lastMessage ? `${lastMessage.senderRole === 'nutritionist' ? 'Tú: ' : ''}${lastMessage.body}` : 'Sin mensajes'}
+                    </p>
+                    {pending > 0 && <Badge className="h-5 min-w-5 shrink-0 px-1.5">{pending}</Badge>}
+                  </div>
                 </div>
               </button>
             )

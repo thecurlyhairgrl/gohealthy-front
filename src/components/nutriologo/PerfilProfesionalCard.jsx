@@ -1,63 +1,31 @@
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Award, GraduationCap, MapPin, FileText } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Award, FileText, GraduationCap, MapPin, Stethoscope } from 'lucide-react'
+import { PerfilDato } from '@/components/nutriologo/PerfilDatosPersonalesCard'
 
 /**
- * Tarjeta que visualiza los datos profesionales, consultorio y biografía clínica del nutriólogo.
+ * Datos profesionales, consultorio y biografía del nutriólogo.
  */
 export function PerfilProfesionalCard({ perfil }) {
   return (
-    <Card className="border-border/70 bg-card shadow-xs">
-      <CardHeader className="pb-3 border-b border-border/50">
-        <CardTitle className="font-heading text-base font-semibold flex items-center gap-2">
+    <Card className="border-border/70 shadow-xs">
+      <CardHeader className="border-b border-border/50 pb-3">
+        <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
           <Award className="size-4 text-primary" />
-          <span>Información Profesional y Consultorio</span>
+          Información profesional y consultorio
         </CardTitle>
       </CardHeader>
-
-      <CardContent className="pt-4 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Cédula Profesional */}
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-              <Award className="size-3.5 text-primary/70" />
-              Cédula Profesional
-            </p>
-            <p className="text-sm font-medium font-mono text-foreground">
-              {perfil.cedula}
-            </p>
-          </div>
-
-          {/* Universidad */}
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-              <GraduationCap className="size-3.5 text-primary/70" />
-              Institución de Egreso
-            </p>
-            <p className="text-sm font-medium text-foreground">
-              {perfil.universidad}
-            </p>
-          </div>
-        </div>
-
-        {/* Consultorio */}
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-            <MapPin className="size-3.5 text-primary/70" />
-            Ubicación del Consultorio
-          </p>
-          <p className="text-sm font-medium text-foreground">
-            {perfil.consultorio}
-          </p>
-        </div>
-
-        {/* Biografía / Enfoque */}
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+      <CardContent className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2">
+        <PerfilDato icon={Award} label="Cédula profesional" value={perfil.professionalLicense} />
+        <PerfilDato icon={Stethoscope} label="Especialidad" value={perfil.specialty} />
+        <PerfilDato icon={GraduationCap} label="Universidad" value={perfil.university} />
+        <PerfilDato icon={MapPin} label="Consultorio" value={perfil.officeAddress} />
+        <div className="space-y-1 sm:col-span-2">
+          <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <FileText className="size-3.5 text-primary/70" />
-            Enfoque Clínico y Biografía
+            Biografía
           </p>
-          <p className="text-sm leading-relaxed text-muted-foreground bg-muted/30 p-3 rounded-lg border border-border/40">
-            {perfil.biografia}
+          <p className="rounded-lg border border-border/40 bg-muted/30 p-3 text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
+            {perfil.bio || 'Cuéntales a tus pacientes sobre tu enfoque.'}
           </p>
         </div>
       </CardContent>

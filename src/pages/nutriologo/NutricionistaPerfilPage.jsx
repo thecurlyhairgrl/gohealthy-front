@@ -1,66 +1,33 @@
 import { useState } from 'react'
-import { nutriologoMock } from '@/mocks/nutriologo'
 import { PerfilHeroCard } from '@/components/nutriologo/PerfilHeroCard'
 import { PerfilDatosPersonalesCard } from '@/components/nutriologo/PerfilDatosPersonalesCard'
 import { PerfilProfesionalCard } from '@/components/nutriologo/PerfilProfesionalCard'
 import { PerfilSeguridadCard } from '@/components/nutriologo/PerfilSeguridadCard'
 import { EditarPerfilModal } from '@/components/nutriologo/EditarPerfilModal'
 import { CambiarPasswordModal } from '@/components/nutriologo/CambiarPasswordModal'
+import { useAuth } from '@/context/AuthContext'
 
 /**
- * Página principal de Mi Perfil para el rol de Nutriólogo.
- * Visualiza y permite editar datos personales, de contacto y profesionales,
- * así como subir avatar y gestionar la contraseña.
+ * Perfil del nutriólogo: sus datos salen de la sesión (AuthContext).
  */
 function NutricionistaPerfilPage() {
-  const [perfil, setPerfil] = useState(nutriologoMock)
+  const { user } = useAuth()
   const [isEditarModalOpen, setIsEditarModalOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
 
-  const handleSubirAvatar = (avatarUrl) => {
-    setPerfil((prev) => ({
-      ...prev,
-      avatarUrl,
-    }))
-  }
-
-  const handleGuardarPerfil = (datosActualizados) => {
-    setPerfil(datosActualizados)
-  }
-
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Cabecera / Tarjeta Hero */}
-      <PerfilHeroCard
-        perfil={perfil}
-        onEditarPerfil={() => setIsEditarModalOpen(true)}
-        onSubirAvatar={handleSubirAvatar}
-      />
+    <div className="mx-auto max-w-5xl space-y-6">
+      <PerfilHeroCard onEditarPerfil={() => setIsEditarModalOpen(true)} />
 
-      {/* Grid de bloques de información */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <PerfilDatosPersonalesCard perfil={perfil} />
-        <PerfilProfesionalCard perfil={perfil} />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <PerfilDatosPersonalesCard perfil={user} />
+        <PerfilProfesionalCard perfil={user} />
       </div>
 
-      {/* Sección de seguridad */}
-      <PerfilSeguridadCard
-        onAbrirCambiarPassword={() => setIsPasswordModalOpen(true)}
-      />
+      <PerfilSeguridadCard onAbrirCambiarPassword={() => setIsPasswordModalOpen(true)} />
 
-      {/* Modal de edición */}
-      <EditarPerfilModal
-        isOpen={isEditarModalOpen}
-        onClose={() => setIsEditarModalOpen(false)}
-        perfil={perfil}
-        onGuardar={handleGuardarPerfil}
-      />
-
-      {/* Modal de cambio de contraseña */}
-      <CambiarPasswordModal
-        isOpen={isPasswordModalOpen}
-        onClose={() => setIsPasswordModalOpen(false)}
-      />
+      <EditarPerfilModal isOpen={isEditarModalOpen} onClose={() => setIsEditarModalOpen(false)} />
+      <CambiarPasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />
     </div>
   )
 }

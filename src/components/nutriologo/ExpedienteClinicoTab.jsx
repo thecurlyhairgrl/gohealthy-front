@@ -1,95 +1,129 @@
-import { ShieldAlert, AlertCircle, HeartPulse, Pill, Dumbbell } from 'lucide-react'
+import { useState } from 'react'
+import { Activity, AlertTriangle, ClipboardList, Pencil, Pill, Target, User, Utensils } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import EditarHistoriaClinicaModal from '@/components/nutriologo/EditarHistoriaClinicaModal'
+import { ALCOHOL_CONSUMPTION, SEX } from '@/lib/labels'
+import { formatDateOnly, getAge } from '@/lib/dates'
+import { toText } from '@/lib/lists'
+
+// Un renglón "Etiqueta: valor"; si no hay valor muestra "Sin registrar"
+function Row({ label, value }) {
+  return (
+    <div className="flex justify-between gap-4 py-1.5 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium">{value === '' || value === null || value === undefined ? 'Sin registrar' : value}</span>
+    </div>
+  )
+}
 
 /**
- * Pestaña de Datos Clínicos y Antecedentes del Paciente.
- * Muestra alergias, intolerancias alimentarias, condiciones de salud,
- * medicamentos actuales y nivel de actividad física.
+ * Historia clínica del paciente por secciones, con un botón para editarla.
  */
-export default function ExpedienteClinicoTab({ antecedentes = {} }) {
-  const secciones = [
+export default function ExpedienteClinicoTab({ patientId, clinicalHistory, onSaved }) {
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const identification = clinicalHistory.identification || {}
+  const pathological = clinicalHistory.pathologicalHistory || {}
+  const nonPathological = clinicalHistory.nonPathologicalHistory || {}
+  const eating = clinicalHistory.eatingHabits || {}
+  const age = getAge(identification.birthDate)
+
+  const sections = [
     {
-      id: 'alergias',
-      titulo: 'Alergias Conocidas',
-      valor: antecedentes.alergias || 'Sin alergias reportadas',
-      icono: ShieldAlert,
-      color: 'text-rose-600 dark:text-rose-400',
-      bg: 'bg-rose-500/10',
-      borde: 'border-rose-500/20',
+      title: 'Identificación',
+      icon: User,
+      rows: [
+        ['Fecha de nacimiento', identification.birthDate ? `${formatDateOnly(identification.birthDate)} (${age} años)` : ''],
+        ['Sexo', SEX[identification.sex]],
+        ['Ocupación', identification.occupation],
+      ],
     },
     {
-      id: 'intolerancias',
-      titulo: 'Intolerancias Alimentarias',
-      valor: antecedentes.intolerancias || 'Sin intolerancias reportadas',
-      icono: AlertCircle,
-      color: 'text-amber-600 dark:text-amber-400',
-      bg: 'bg-amber-500/10',
-      borde: 'border-amber-500/20',
+      title: 'Motivo y metas',
+      icon: Target,
+      rows: [
+        ['Motivo de consulta', clinicalHistory.reasonForVisit],
+        ['Metas', toText(clinicalHistory.goals)],
+        ['Peso meta', clinicalHistory.weightGoalKg ? `${clinicalHistory.weightGoalKg} kg` : ''],
+        ['Grasa meta', clinicalHistory.bodyFatGoalPct ? `${clinicalHistory.bodyFatGoalPct} %` : ''],
+      ],
     },
     {
-      id: 'padecimientos',
-      titulo: 'Padecimientos y Diagnósticos',
-      valor: antecedentes.padecimientos || 'Sin diagnósticos previos relevantes',
-      icono: HeartPulse,
-      color: 'text-indigo-600 dark:text-indigo-400',
-      bg: 'bg-indigo-500/10',
-      borde: 'border-indigo-500/20',
+      title: 'Alergias e intolerancias',
+      icon: AlertTriangle,
+      rows: [['Alergias e intolerancias', toText(pathological.allergies)]],
     },
     {
-      id: 'medicamentos',
-      titulo: 'Medicación y Suplementos',
-      valor: antecedentes.medicamentos || 'No consume medicamentos habituales',
-      icono: Pill,
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bg: 'bg-emerald-500/10',
-      borde: 'border-emerald-500/20',
+      title: 'Antecedentes patológicos',
+      icon: Pill,
+      rows: [
+        ['Enfermedades', toText(pathological.diseases)],
+        ['Cirugías', toText(pathological.surgeries)],
+        ['Medicamentos', toText(pathological.medications)],
+      ],
     },
     {
-      id: 'actividadFisica',
-      titulo: 'Nivel de Actividad Física y Ejercicio',
-      valor: antecedentes.actividadFisica || 'Sedentario / Sin actividad regular reportada',
-      icono: Dumbbell,
-      color: 'text-sky-600 dark:text-sky-400',
-      bg: 'bg-sky-500/10',
-      borde: 'border-sky-500/20',
+      title: 'Estilo de vida',
+      icon: Activity,
+      rows: [
+        ['Fuma', nonPathological.smoking === undefined ? '' : nonPathological.smoking ? 'Sí' : 'No'],
+        ['Alcohol', ALCOHOL_CONSUMPTION[nonPathological.alcoholConsumption]],
+        ['Actividad física', nonPathological.physicalActivity],
+        ['Horas de sueño', nonPathological.sleepHours],
+      ],
+    },
+    {
+      title: 'Hábitos de alimentación',
+      icon: Utensils,
+      rows: [
+        ['Comidas al día', eating.mealsPerDay],
+        ['Le gustan', toText(eating.preferredFoods)],
+        ['No le gustan', toText(eating.dislikedFoods)],
+      ],
     },
   ]
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold font-heading">Historial y Antecedentes Clínicos</h2>
-        <p className="text-xs text-muted-foreground">
-          Información de salud declarada por el paciente e identificada en evaluaciones previas
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="flex items-center gap-2 font-heading text-lg font-semibold">
+            <ClipboardList className="size-5 text-primary" />
+            Historia clínica
+          </h2>
+          <p className="text-xs text-muted-foreground">Lo que llenó el paciente en su primer ingreso y lo que agregues en consulta</p>
+        </div>
+        <Button variant="outline" onClick={() => setIsEditOpen(true)}>
+          <Pencil data-icon="inline-start" />
+          Editar
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {secciones.map((sec) => {
-          const Icon = sec.icono
-          return (
-            <Card key={sec.id} className="border-border/60 bg-card/80">
-              <CardHeader className="pb-2 pt-4 px-4 sm:px-6">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${sec.bg} ${sec.color}`}>
-                    <Icon className="size-4" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-sm font-semibold">
-                      {sec.titulo}
-                    </CardTitle>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 sm:px-6">
-                <div className="rounded-md bg-muted/40 p-3 text-sm text-foreground/90 leading-relaxed">
-                  {sec.valor}
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {sections.map((section) => (
+          <Card key={section.title} className="border-border/60">
+            <CardHeader className="pb-1">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                <section.icon className="size-4 text-primary" />
+                {section.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="divide-y divide-border/50">
+              {section.rows.map(([label, value]) => (
+                <Row key={label} label={label} value={value} />
+              ))}
+            </CardContent>
+          </Card>
+        ))}
       </div>
+
+      <EditarHistoriaClinicaModal
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        patientId={patientId}
+        clinicalHistory={clinicalHistory}
+        onSaved={onSaved}
+      />
     </div>
   )
 }

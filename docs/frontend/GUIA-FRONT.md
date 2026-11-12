@@ -2,9 +2,9 @@
 
 Esta guía reorganiza el front y lo conecta con la API. Está repartida por persona, igual que la guía de clase. Al terminar habremos entregado:
 
-- [ ] El proyecto limpio: sin Podman y con una estructura de carpetas como la de clase
-- [ ] La sesión real: login, registro, recuperación de contraseña y primer ingreso del paciente
-- [ ] Las pantallas del nutriólogo conectadas a la API, con las correcciones del profesor
+- [x] El proyecto limpio: sin Podman y con una estructura de carpetas como la de clase
+- [x] La sesión real: login, registro, recuperación de contraseña y primer ingreso del paciente
+- [x] Las pantallas del nutriólogo conectadas a la API, con las correcciones del profesor
 - [ ] Las pantallas del paciente conectadas a la API, con el plan alimenticio como receta
 - [ ] La biblioteca de recetas, el constructor del plan y los reportes
 - [ ] Ningún `alert()` ni `confirm()` del navegador: todo con toasts y diálogos de shadcn
@@ -37,7 +37,7 @@ Esta guía reorganiza el front y lo conecta con la API. Está repartida por pers
 | Parte | Quién | Qué | Depende de |
 |---|---|---|---|
 | 1 | Dante | Limpieza, estructura, sesión, rutas y pantallas de autenticación | Nada |
-| 2 | Leo | Pantallas del nutriólogo | Parte 1 |
+| 2 | Dante (hecha) | Pantallas del nutriólogo | Parte 1 |
 | 3 | Fer | Pantallas del paciente | Parte 1 |
 | 4 | Dante | Recetas, constructor del plan y reportes | Parte 1 |
 | 5 | Todos | Limpieza final y prueba completa | Partes 1 a 4 |
@@ -157,6 +157,7 @@ src/
 │   ├── ui/              shadcn (no editar)
 │   ├── FormField.jsx    Campo de formulario reutilizable
 │   ├── DatePicker.jsx   Selector de fecha con el calendario de shadcn
+│   ├── FormSelect.jsx   Select de shadcn conectado a React Hook Form
 │   ├── ProtectedRoute.jsx
 │   ├── ConfirmDialog.jsx
 │   ├── landing/         Componentes de la página de inicio
@@ -224,32 +225,37 @@ Archivo: `src/components/ConfirmDialog.jsx`
 
 ```jsx
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
-// Reemplaza a confirm(): <ConfirmDialog open={open} onOpenChange={setOpen} title="..." onConfirm={borrar} />
 export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel = 'Confirmar', onConfirm }) {
-  return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  )
+    // El botón de confirmar no cierra el diálogo solo: lo cerramos y luego hacemos la acción
+    function handleConfirm() {
+        onOpenChange(false)
+        onConfirm()
+    }
+
+    return (
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
+                    {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirm}>{confirmLabel}</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    )
 }
 ```
 
@@ -264,12 +270,8 @@ Es el `apiFetch` del proyecto de clase, con tres cosas más que pide este back:
 Archivo: `src/api/client.js`
 
 ```js
-// URL base de la API, leída desde el archivo .env
 const API_URL = import.meta.env.VITE_API_URL
 
-// Función base para TODAS las peticiones a la API.
-// Se encarga de: armar la URL, poner headers, mandar el token
-// y convertir los errores de la API en errores de JavaScript.
 export async function apiFetch(endpoint, { method = 'GET', body } = {}) {
   const headers = {}
 
@@ -278,7 +280,6 @@ export async function apiFetch(endpoint, { method = 'GET', body } = {}) {
     headers.Authorization = `Bearer ${token}`
   }
 
-  // Los archivos (FormData) se mandan tal cual; todo lo demás, como JSON
   const isFile = body instanceof FormData
   if (body && !isFile) {
     headers['Content-Type'] = 'application/json'
@@ -288,23 +289,24 @@ export async function apiFetch(endpoint, { method = 'GET', body } = {}) {
   const response = await fetch(`${API_URL}${endpoint}`, { method, headers, body })
 
   // Sesión vencida: se borra y se regresa al login.
-  // El login con contraseña incorrecta también responde 401, pero ese error lo muestra el formulario
   if (response.status === 401 && endpoint !== '/auth/login') {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     window.location.assign('/auth/login')
   }
 
-  // Algunas respuestas pueden venir sin cuerpo
+  // Respuestas sin body
   const data = await response.json().catch(() => null)
   if (!response.ok) {
-    throw new Error(data?.message || 'Ocurrió un error en la petición')
+    const error = new Error(data?.message || 'Ocurrió un error en la petición')
+    // El código HTTP, por si la pantalla necesita distinguir un 404 de otro error
+    error.status = response.status
+    throw error
   }
   return data
 }
 
-// Descarga un archivo protegido (los documentos de laboratorio).
-// Un <a href> no sirve, porque no manda el token
+// Descarga de un archivo
 export async function downloadFile(endpoint, fileName) {
   const response = await fetch(`${API_URL}${endpoint}`, {
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -322,7 +324,7 @@ export async function downloadFile(endpoint, fileName) {
 }
 ```
 
-Igual que en clase, el mensaje en español que manda el back queda en `error.message`.
+Igual que en clase, el mensaje en español que manda el back queda en `error.message`. Además, `error.status` trae el código HTTP, por si una pantalla necesita distinguir un `404` (por ejemplo, "este paciente no tiene plan") de un error real.
 
 Cada recurso tiene su archivo, con una función por endpoint:
 
@@ -727,11 +729,13 @@ export function usePatients() {
 }
 ```
 
-Los contextos de datos del nutriólogo van en su layout, no en `main.jsx`: así solo se cargan cuando entra un nutriólogo. `NutricionistaLayout` ya envuelve su contenido con `PatientsProvider`; los contextos nuevos (por ejemplo `AppointmentsProvider`) se agregan igual:
+Los contextos de datos del nutriólogo van en su layout, no en `main.jsx`: así solo se cargan cuando entra un nutriólogo. `NutricionistaLayout` envuelve su contenido con `PatientsProvider` y `AppointmentsProvider`:
 
 ```jsx
 <PatientsProvider>
-  {/* ...el SidebarProvider y lo demás que ya tiene el layout... */}
+  <AppointmentsProvider>
+    {/* ...el SidebarProvider y lo demás que ya tiene el layout... */}
+  </AppointmentsProvider>
 </PatientsProvider>
 ```
 
@@ -1012,207 +1016,94 @@ Al terminar la Parte 1: alguien que no ha iniciado sesión no puede entrar a `/n
 
 ---
 
-# Parte 2 — Leo: pantallas del nutriólogo
+# Parte 2 — Pantallas del nutriólogo (hecha)
 
-Los componentes que ya existen se reutilizan; lo que cambia es de dónde vienen los datos y lo que pidió el profesor.
+Esta parte ya está hecha (rama `feature/nutriologo/dante`). Aquí queda qué hace cada pantalla, qué se decidió y dónde está el código, para poder explicarlo y para que la Parte 3 reutilice lo mismo.
+
+**Decisiones:**
+
+| Tema | Decisión |
+|---|---|
+| Duración de las citas | Siempre 60 minutos. Los horarios se ofrecen cada 30 minutos |
+| Clic en una cita del calendario | Abre un panel con el detalle y tres acciones: Registrar consulta, Reprogramar y Cancelar |
+| Registrar consulta | Formulario completo: medidas, IMC automático, calculadora energética, diagnóstico, indicaciones y notas |
+| Citas canceladas | No se dibujan en el calendario (no ocupan horario); sí aparecen en las citas de hoy |
+| Peso actual | El registro más reciente, sea de una consulta o de una medición del paciente |
+| Mensajes | Bandeja de correo: se recargan al abrir, al enviar y con el botón de actualizar |
 
 ## Paso 2.1 — Utilidades compartidas
 
-Estas utilidades las usan varias partes. Créalas al empezar (o Dante, si va primero).
+Las usan varias partes. Están en `src/lib/`:
 
-Archivo: `src/lib/labels.js`
+| Archivo | Qué tiene |
+|---|---|
+| `labels.js` | Textos en español de los valores de la API (`APPOINTMENT_STATUS`, `APPOINTMENT_MODALITY`, `SEX`, `ALCOHOL_CONSUMPTION`, `ADHERENCE_STATUS`, `MEAL_TIME`, `WEEK_DAY`), `fullName()` e `initials()` |
+| `dates.js` | `toDateInput`, `formatDateOnly` (fechas sin hora, en UTC), `formatDate`, `formatTime`, `formatLongDate`, `isSameDay` y `getAge` |
+| `lists.js` | `toList` y `toText` para las listas que se escriben separadas por comas, `toNumber` y `numberToText` |
+| `image-url.js` | `getImageUrl()` para las imágenes del back (fotos de perfil, recetas) |
+| `week-grid.js` | La cuadrícula del calendario: horas, posición de cada cita, días de la semana y `getDayRange` |
+| `schedule.js` | `getDaySlots()`: los horarios de un día y cuáles están ocupados |
+| `energy.js` | Fórmulas de Harris-Benedict y Mifflin-St Jeor, factores de actividad e IMC |
+| `weights.js` | `getWeightHistory()`: junta el peso de las consultas y de las mediciones del paciente |
 
-```js
-// La API usa valores en inglés; esto es lo que se muestra
-export const APPOINTMENT_STATUS = {
-  scheduled: { label: 'Programada', className: 'bg-sky-100 text-sky-800 border-sky-300' },
-  rescheduled: { label: 'Reprogramada', className: 'bg-amber-100 text-amber-800 border-amber-300' },
-  completed: { label: 'Completada', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-  cancelled: { label: 'Cancelada', className: 'bg-muted text-muted-foreground border-border line-through' },
-}
+Componentes de formulario que sirven en cualquier parte (en `src/components/`): `FormField`, `DatePicker` (calendario de shadcn, con `fromDate` y `toDate` para limitar los días) y `FormSelect` (el `Select` de shadcn conectado a React Hook Form).
 
-export const APPOINTMENT_MODALITY = {
-  'in-person': 'Presencial',
-  'video-call': 'En línea',
-}
+## Paso 2.2 — Dashboard: citas de hoy y semana por horas
 
-export const SEX = {
-  female: 'Femenino',
-  male: 'Masculino',
-}
+`pages/nutriologo/NutricionistaDashboardPage.jsx`. Saluda con el nombre del usuario, y tiene dos secciones:
 
-export const ADHERENCE_STATUS = {
-  green: { label: 'Buen apego', className: 'bg-emerald-500' },
-  yellow: { label: 'Apego regular', className: 'bg-amber-400' },
-  red: { label: 'Bajo apego', className: 'bg-red-500' },
-  'no-data': { label: 'Sin datos', className: 'bg-muted-foreground/40' },
-}
+- **Citas de hoy** (`CitasDelDia`): la hora va en grande, con el paciente, la modalidad, el motivo y el estado.
+- **Calendario** (`CalendarioHeader` y `CalendarioSemanal`): lunes a domingo, de 8:00 a 20:00. Cada cita es un bloque del color de su estado, con la altura de su duración. Arriba hay una leyenda de colores. El fondo libre se puede pulsar para agendar a esa hora; lo que ya pasó se ve gris.
 
-export const fullName = (person) => {
-  return [person.firstName, person.paternalLastName, person.maternalLastName].filter(Boolean).join(' ')
-}
-```
+Las citas vienen de `context/AppointmentsContext.jsx`, igual que `PatientsContext`: carga la semana visible y las de hoy, y tiene `moveWeek`, `addAppointment`, `editAppointment` y `reloadAppointments`. Va en `NutricionistaLayout`.
 
-Archivo: `src/lib/dates.js`
+Al pulsar una cita se abre `CitaDetalleSheet`. Cancelar usa `ConfirmDialog` y `PUT /appointments/:id` con `{ status: 'cancelled' }`; el back le avisa al paciente por correo.
 
-```js
-const pad = (value) => String(value).padStart(2, '0')
+Se borraron `NutricionistaCalendarioPage`, `CalendarioMensual` y `CalendarioDiaSheet`.
 
-// Fecha local en AAAA-MM-DD (para encuestas y mediciones). Nunca uses toISOString() para esto
-export const toDateInput = (date = new Date()) => {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
+## Paso 2.3 — Agendar y reprogramar
 
-// Fechas sin hora que guarda el back (encuestas, mediciones): se muestran en UTC para no perder un día
-export const formatDateOnly = (value) => {
-  return new Date(value).toLocaleDateString('es-MX', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' })
-}
+`components/nutriologo/AgendarCitaModal.jsx` sirve para las dos cosas:
 
-// Fechas con hora (citas, mensajes): se muestran en la hora local
-export const formatTime = (value) => {
-  return new Date(value).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
-}
-```
+1. **Paciente con búsqueda:** el `Combobox` de shadcn con los pacientes activos de `usePatients()`. Al reprogramar no se puede cambiar.
+2. **Día:** `DatePicker`, desde hoy.
+3. **Horario:** al elegir el día se piden sus citas (`hooks/useDayAppointments.js`) y `getDaySlots` arma los botones. Los ocupados o pasados aparecen deshabilitados. Como las citas duran una hora, si a las 9:00 hay cita, también se bloquean 8:30 y 9:30.
+4. **Modalidad:** `ToggleGroup` con Presencial y En línea (`in-person` y `video-call`).
 
-Archivo: `src/lib/image-url.js`
-
-```js
-// Las imágenes no están bajo /api: la API regresa rutas como /images/recipes/tacos.webp
-const API_ORIGIN = new URL(import.meta.env.VITE_API_URL).origin
-
-export const getImageUrl = (path) => (path ? `${API_ORIGIN}${path}` : null)
-```
-
-## Paso 2.2 — Dashboard: citas del día y semana por horas
-
-El dashboard queda con dos cosas: las **citas de hoy** y el **calendario de la semana**. La lista de pacientes se va a su propia página (paso 2.4).
-
-**Citas de hoy** (`CitasDelDia`): la hora es lo primero que se ve, en grande (`text-2xl font-semibold`), con el nombre del paciente, la modalidad y el estado debajo.
-
-**Calendario semanal** (reutiliza `CalendarioSemanal`):
-
-- Columnas de lunes a domingo y filas por hora, de 8:00 a 20:00.
-- Cada cita es un bloque en su día, desde su hora de inicio, con la altura de su duración (`durationMin`).
-- **Paleta:** el fondo de la cuadrícula es el espacio libre, y cada cita usa el color de su estado (`APPOINTMENT_STATUS`). Agrega una leyenda con los colores arriba del calendario.
-- Botones de semana anterior, siguiente y "Hoy".
-- Al hacer clic en un espacio libre, abre "Agendar cita" con ese día y esa hora.
-- Las citas se cargan con un `AppointmentsContext`, igual que `PatientsContext` (paso 1.9), con una función para cargar la semana visible: `GET /appointments?from=<lunes>&to=<domingo>`. Lo usan el dashboard y "Agendar cita", así que va en el layout del nutriólogo junto a `PatientsProvider`.
-
-Para ubicar cada bloque en la cuadrícula:
-
-Archivo: `src/lib/week-grid.js`
-
-```js
-export const GRID_START_HOUR = 8
-export const GRID_END_HOUR = 20
-export const HOUR_HEIGHT = 64 // píxeles por hora
-
-// Posición y altura de una cita dentro de su columna del día
-export const getAppointmentBox = (appointment) => {
-  const start = new Date(appointment.dateTime)
-  const minutesFromTop = (start.getHours() - GRID_START_HOUR) * 60 + start.getMinutes()
-  return {
-    top: (minutesFromTop / 60) * HOUR_HEIGHT,
-    height: (appointment.durationMin / 60) * HOUR_HEIGHT,
-  }
-}
-
-// Lunes a domingo de la semana de una fecha
-export const getWeekDays = (date) => {
-  const monday = new Date(date)
-  const day = monday.getDay()
-  monday.setDate(monday.getDate() + (day === 0 ? -6 : 1 - day))
-  monday.setHours(0, 0, 0, 0)
-
-  return Array.from({ length: 7 }, (_, index) => {
-    const next = new Date(monday)
-    next.setDate(monday.getDate() + index)
-    return next
-  })
-}
-```
-
-Al terminar, borra `NutricionistaCalendarioPage`, `CalendarioMensual` y la opción de vista mensual de `CalendarioHeader`. `CalendarioDiaSheet` se puede quitar o reutilizar para ver el detalle de una cita.
-
-## Paso 2.3 — Agendar cita
-
-Reutiliza `AgendarCitaModal` con tres cambios:
-
-1. **Paciente con búsqueda:** cambia el `<select>` por el `Combobox` de shadcn (`components/ui/combobox.jsx`), con los pacientes de `usePatients()` (`PatientsContext`).
-2. **Horarios disponibles:** quita el `<input type="time">`. Al elegir el día, muestra botones con los horarios cada 30 minutos; los que se cruzan con otra cita aparecen deshabilitados.
-3. **Modalidad:** `Presencial` y `Online` se mandan como `modality: 'in-person'` y `'video-call'`.
-
-Archivo: `src/lib/schedule.js`
-
-```js
-export const WORK_START_HOUR = 8
-export const WORK_END_HOUR = 20
-export const SLOT_MINUTES = 30
-
-// Horarios de un día; un horario está ocupado si se cruza con una cita que no está cancelada
-export const getDaySlots = (day, appointments, durationMin = 60) => {
-  const slots = []
-  const now = new Date()
-
-  for (let minutes = WORK_START_HOUR * 60; minutes + durationMin <= WORK_END_HOUR * 60; minutes += SLOT_MINUTES) {
-    const start = new Date(day)
-    start.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0)
-    const end = new Date(start.getTime() + durationMin * 60000)
-
-    const isTaken = appointments.some((appointment) => {
-      if (appointment.status === 'cancelled') {
-        return false
-      }
-      const otherStart = new Date(appointment.dateTime)
-      const otherEnd = new Date(otherStart.getTime() + appointment.durationMin * 60000)
-      return start < otherEnd && otherStart < end
-    })
-
-    slots.push({
-      label: start.toTimeString().slice(0, 5),
-      dateTime: start.toISOString(),
-      available: !isTaken && start > now,
-    })
-  }
-
-  return slots
-}
-```
-
-Para saber qué está ocupado, pide las citas de ese día (`GET /appointments?from=&to=`). El `dateTime` del horario elegido es lo que se manda en `POST /appointments`.
+Si se abre desde un hueco del calendario, el día y la hora ya vienen elegidos. Antes de guardar se revisa que ese horario siga libre.
 
 ## Paso 2.4 — Página de pacientes
 
-Página nueva `/nutriologo/pacientes`, con lo que hoy está en el dashboard:
+`pages/nutriologo/NutricionistaPacientesPage.jsx`, en `/nutriologo/pacientes`:
 
-- `BuscadorPacientes` y `PacienteCard`, con `usePatients()` de `PatientsContext`, filtrando por nombre o correo en la página.
-- La tarjeta muestra el semáforo (`adherence.status`), la última consulta, el peso actual y la meta. Todo viene en `GET /patients` (sección 5.2 del spec).
-- El botón **Nuevo paciente** abre un diálogo con su formulario (React Hook Form + Zod) y usa `addPatient()` del contexto, con el toast del ejemplo del paso 1.9. Esto reemplaza el único `alert()` que tiene hoy el proyecto.
-- Un interruptor para ver también a los inactivos: `GET /patients?includeInactive=true`. Agrega ese parámetro a `getPatientsRequest` en `api/patients.js`.
+- Búsqueda por nombre o correo en la misma página, sin volver a pedir la lista.
+- Interruptor "Mostrar inactivos": cambia `includeInactive` del contexto, que vuelve a pedir `GET /patients?includeInactive=true`.
+- `PacienteCard` muestra el semáforo, la última consulta, el peso actual y la meta.
+- **Nuevo paciente** (`NuevoPacienteModal`): React Hook Form + Zod (`schemas/patients.js`). Si el correo no salió, el toast avisa que use "Reenviar acceso".
 
 ## Paso 2.5 — Expediente del paciente
 
-`/nutriologo/pacientes/:id` reutiliza los componentes del expediente:
+`pages/nutriologo/NutricionistaPacienteDetallePage.jsx`. Carga el expediente (`usePatientDetail`), las consultas (`useConsultations`) y el progreso (`useProgress`), y los reparte:
 
-| Pestaña | Qué hace | API |
+| Parte | Qué hace | API |
 |---|---|---|
-| `ExpedienteHeroCard` | Datos y semáforo, con botones Editar, Desactivar (con `ConfirmDialog`) y Reenviar acceso | `GET /patients/:id`, `PUT /patients/:id`, `POST /patients/:id/resend-access` |
-| `ExpedienteClinicoTab` | Historia clínica. Las intolerancias van dentro de `allergies` (por ejemplo "Intolerancia a la lactosa"). Agrega peso meta y grasa meta | `GET` y `PUT /patients/:id/clinical-history` |
-| `ExpedienteProgresoTab` | Gráficas, metas y mediciones | `GET /dashboard/progress?patientId=` |
-| Consultas (pestaña nueva) | Historial de consultas. `RegistrarSesionModal` crea una consulta, con su calculadora energética | `/consultations` |
-| `ExpedienteDocumentosTab` | Lista, descarga y subida de documentos | `/lab-documents` |
-| `ExpedientePlanTab` | Resumen del plan activo, con un botón que lleva al constructor (Parte 4) | `GET /meal-plans/active?patientId=` |
+| `ExpedienteHeroCard` | Datos, peso actual, meta y apego con su semáforo. Botones: Enviar mensaje, Agendar cita, Editar datos (`EditarPacienteModal`), Reenviar acceso y Desactivar/Reactivar (con `ConfirmDialog`) | `PUT /patients/:id`, `POST /patients/:id/resend-access` |
+| Historia clínica | Por secciones. "Editar" abre `EditarHistoriaClinicaModal`; ahí también van el peso y la grasa meta. Las intolerancias van en alergias | `PUT /patients/:id/clinical-history` |
+| Consultas | Historial con medidas, cálculo energético e indicaciones. "Registrar consulta" abre `RegistrarConsultaModal` | `/consultations` |
+| Progreso | Peso inicial, actual, meta y avance; gráfica del peso contra la meta y gráfica del cumplimiento que el paciente contesta en su cuestionario | `GET /dashboard/progress?patientId=` |
+| Documentos | Subir (`SubirDocumentoModal`), descargar con `downloadFile` y borrar los que subió el nutriólogo | `/lab-documents` |
+| Plan | Resumen del plan activo y botón al constructor (Parte 4). Si no hay plan, el back responde `404` y se muestra el estado vacío | `GET /meal-plans/active?patientId=` |
 
-**La descarga de documentos usa `downloadFile` de `api/client.js`, no un enlace**, porque un `<a href>` no manda el token:
+`RegistrarConsultaModal` carga solo lo que necesita (sexo, edad y la última estatura), así que funciona igual desde el expediente que desde una cita del dashboard. Si viene de una cita, la cita queda completada. El IMC, el gasto basal (GEB) y el gasto total (GET = GEB × factor) se calculan mientras se escribe; la kcal meta, si se deja vacía, es el GET.
 
-```js
-await downloadFile(`/lab-documents/${document._id}/file`, document.originalName)
-```
+Al desactivar a un paciente ya no puede iniciar sesión y deja de aparecer en la lista y en el chat; su expediente se conserva.
 
 ## Paso 2.6 — Chat y perfil
 
-- **Chat:** `ChatListaConversaciones` usa `GET /messages/conversations`, que ya trae el último mensaje y los no leídos. Funciona como bandeja de correo: los mensajes se recargan al abrir la conversación y después de enviar. Al abrir una conversación, `PUT /messages/read?patientId=`. Quita el indicador "en línea".
-- **Perfil:** `EditarPerfilModal` usa `PUT /auth/me` y luego `saveUser()` del contexto, con `specialty`, `university`, `officeAddress` y `bio`. La foto sube con `POST /auth/me/avatar`. Quita sexo y fecha de nacimiento, que el back no tiene. `CambiarPasswordModal` usa `PUT /auth/change-password`.
+- **Chat** (`NutricionistaChatPage`): la lista sale de `GET /messages/conversations` (`useConversations`) y la conversación de `useMessages`, que la marca como leída al abrirla. Se puede abrir directo con `/nutriologo/chat?paciente=<id>`, como hace el botón "Enviar mensaje" del expediente. El menú lateral muestra los mensajes sin leer (`GET /messages/unread-count`).
+- **Perfil** (`NutricionistaPerfilPage`): los datos salen de `useAuth()`. `EditarPerfilModal` usa `PUT /auth/me` y `saveUser()`; la foto sube con `POST /auth/me/avatar`; `CambiarPasswordModal` usa `PUT /auth/change-password`. Se quitaron sexo y fecha de nacimiento, que el back no tiene.
+
+`mocks/nutriologo.js` ya no se usa y se borró.
 
 ---
 
