@@ -8,7 +8,7 @@ Esta guía reorganiza el front y lo conecta con la API. Está repartida por pers
 - [ ] Las pantallas del paciente conectadas a la API, con el plan alimenticio como receta
 - [ ] La biblioteca de recetas, el constructor del plan y los reportes
 - [ ] Ningún `alert()` ni `confirm()` del navegador: todo con toasts y diálogos de shadcn
-- [ ] Ningún archivo `mock-data.js`
+- [ ] Ningún dato de prueba (`src/mocks/`)
 
 **El back manda.** Cuando una pantalla no coincida con lo que responde la API, se cambia la pantalla. El contrato de cada endpoint está en `docs/frontend/specs/conexion-api-back.spec.md`; en esta guía se cita como "el spec".
 
@@ -22,9 +22,9 @@ Esta guía reorganiza el front y lo conecta con la API. Está repartida por pers
 |---|---|
 | Estructura | Como la del proyecto de clase: `api/`, `context/`, `components/`, `hooks/`, `layouts/`, `pages/` y `schemas/` |
 | Sesión | Un `AuthContext` sencillo, como en clase. Se quita Zustand |
-| Datos de la API | TanStack Query, que ya está instalado |
+| Datos de la API | `fetch` con el `apiFetch` de clase. Contextos, como `BooksContext`, para los datos que comparten varias pantallas, y hooks con `useEffect` para los de una sola. Se quitan axios y TanStack Query |
 | Formularios | React Hook Form + Zod |
-| Rutas | React Router (`react-router-dom`), con rutas protegidas por rol |
+| Rutas | React Router (`react-router-dom`) como en clase: `BrowserRouter` en `main.jsx` y `<Routes>` en `App.jsx`, con un `ProtectedRoute` |
 | Avisos | Toasts de shadcn. Nada de `alert()` ni `confirm()` |
 | Podman | Se quita |
 | Lista de pacientes | Sale del dashboard y pasa a una página **Pacientes** |
@@ -122,11 +122,17 @@ export default defineConfig({
 
 ```bash
 pnpm add @hookform/resolvers
-pnpm remove zustand
+pnpm remove zustand axios @tanstack/react-query
 ```
 
 - **`@hookform/resolvers`** conecta React Hook Form con Zod. Ya tenemos las dos librerías, pero falta esta.
-- **Zustand** se quita porque la sesión vive en un contexto, como en clase.
+- **Zustand, axios y TanStack Query** se quitan para trabajar como en clase: la sesión vive en un contexto, las peticiones usan `fetch` y los datos se cargan con contextos y hooks propios.
+
+Al quitarlas, `src/app/providers.jsx`, `src/lib/api-client.js` y `src/lib/query-client.js` dejan de compilar. El cliente se reescribe en el paso 1.5, los providers pasan a `main.jsx` en el paso 1.8 y `src/lib/query-client.js` se borra:
+
+```bash
+git rm src/lib/query-client.js
+```
 
 En `.env` y `.env.example`:
 
@@ -143,13 +149,14 @@ Así queda `src/`. Los componentes de shadcn se quedan en `components/ui/` y no 
 ```
 src/
 ├── api/                 Una función por endpoint, un archivo por recurso
-│   ├── client.js        axios con el token y el manejo del 401
+│   ├── client.js        apiFetch: el token, los errores y el 401
 │   ├── auth.js
 │   ├── patients.js
 │   └── ...
 ├── components/
 │   ├── ui/              shadcn (no editar)
 │   ├── FormField.jsx    Campo de formulario reutilizable
+│   ├── DatePicker.jsx   Selector de fecha con el calendario de shadcn
 │   ├── ProtectedRoute.jsx
 │   ├── ConfirmDialog.jsx
 │   ├── landing/         Componentes de la página de inicio
@@ -157,10 +164,11 @@ src/
 │   ├── nutriologo/      Componentes del nutriólogo
 │   └── paciente/        Componentes del paciente
 ├── context/
-│   └── AuthContext.jsx  Sesión: usuario, login y logout
-├── hooks/               Un archivo por recurso con sus consultas de TanStack Query
-├── layouts/             AuthLayout, NutritionistLayout, PatientLayout
-├── lib/                 Utilidades: query-client, notify, fechas, textos, imágenes
+│   ├── AuthContext.jsx  Sesión: usuario, login y logout
+│   └── ...              Datos que comparten varias pantallas (pacientes, citas)
+├── hooks/               Datos de una sola pantalla, con useEffect
+├── layouts/             NutricionistaLayout, PacienteLayout, PrimerIngresoLayout
+├── lib/                 Utilidades: fechas, textos, imágenes, horarios
 ├── pages/
 │   ├── landing/
 │   ├── auth/
@@ -170,9 +178,9 @@ src/
 │   └── NotFoundPage.jsx
 ├── schemas/             Esquemas de Zod de los formularios
 ├── data/                Textos fijos de la landing y de auth
-├── router.jsx
-├── providers.jsx
-├── main.jsx
+├── mocks/               Datos de prueba, mientras se conecta la API (se borran al final)
+├── App.jsx              Las rutas, con <Routes> y <Route>, como en clase
+├── main.jsx             BrowserRouter y providers
 └── index.css
 ```
 
@@ -180,7 +188,7 @@ De dónde sale cada cosa:
 
 | Hoy | Pasa a |
 |---|---|
-| `app/router.jsx`, `app/providers.jsx` | `router.jsx`, `providers.jsx` |
+| `app/router.jsx`, `app/providers.jsx`, `app/layouts/RootLayout.jsx` | Se borran: las rutas pasan a `App.jsx` y los providers a `main.jsx` (paso 1.8) |
 | `app/layouts/*` | `layouts/` |
 | `features/auth/components/*` | `components/auth/` |
 | `features/auth/data/*`, `features/landing/data/*` | `data/` |
@@ -189,35 +197,26 @@ De dónde sale cada cosa:
 | `features/paciente/components/*` | `components/paciente/` |
 | `pages/nutricionista/*` | `pages/nutriologo/` |
 | `lib/api-client.js` | `api/client.js` |
-| `features/*/data/mock-data.js` | Se borran al final (Parte 5) |
+| `features/*/data/mock-data.js` | `mocks/nutriologo.js` y `mocks/paciente.js`, como en el proyecto de clase. Se borran al final (Parte 5) |
 | `pages/HomePage.jsx`, `pages/HomePage.css`, `pages/paciente/PacientePlaceholderPage.jsx` | Se borran: no se usan |
 
 Muévelos con `git mv` para conservar su historial, y corrige los `import` con el alias `@/`. Al terminar, `pnpm build` debe pasar. **Este paso no cambia nada visual: es solo mover archivos.** Conviene hacerlo en un commit aparte.
 
 ## Paso 1.4 — Avisos con toasts
 
-`components/ui/toast.jsx` ya trae un administrador global de toasts. Estas dos funciones son lo único que usaremos en toda la app:
+Usamos el componente de toast de shadcn que ya está instalado (`components/ui/toast.jsx`). Trae dos piezas:
 
-Archivo: `src/lib/notify.js`
+- **`Toaster`:** donde aparecen los toasts. Se pone una sola vez, en `main.jsx` (paso 1.8).
+- **`toast`:** con él se muestra un toast desde cualquier archivo, incluso fuera de un componente.
 
 ```js
 import { toast } from '@/components/ui/toast'
 
-export const notifySuccess = (title, description) => {
-  toast.add({ title, description, type: 'success' })
-}
-
-export const notifyError = (title, description) => {
-  toast.add({ title, description, type: 'error' })
-}
+toast.add({ title: 'Cita agendada', type: 'success' })
+toast.add({ title: 'No se pudo guardar', description: 'Revisa tu conexión', type: 'error' })
 ```
 
-Se pueden llamar desde cualquier lugar, incluso fuera de un componente:
-
-```js
-notifySuccess('Cita agendada')
-notifyError('No se pudo guardar', 'Revisa tu conexión')
-```
+`type` puede ser `success`, `error`, `warning`, `info` o `loading`, y cambia el ícono. **Nunca uses `alert()`**: en su lugar va un toast.
 
 Para preguntar antes de borrar algo, en lugar de `confirm()`, usa este diálogo:
 
@@ -256,69 +255,113 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
 
 ## Paso 1.5 — Cliente de la API
 
-El cliente agrega el token a cada petición y, si la sesión venció, lleva al login. Es lo mismo que `apiFetch` en clase, pero con axios.
+Es el `apiFetch` del proyecto de clase, con tres cosas más que pide este back:
+
+- **El token** sale de `localStorage`, así que no hay que pasarlo en cada llamada.
+- **Los archivos** (`FormData`) se mandan tal cual, sin convertirlos a JSON.
+- **Si la sesión vence** (`401`), borra la sesión y lleva al login.
 
 Archivo: `src/api/client.js`
 
 ```js
-import axios from 'axios'
+// URL base de la API, leída desde el archivo .env
+const API_URL = import.meta.env.VITE_API_URL
 
-export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-})
+// Función base para TODAS las peticiones a la API.
+// Se encarga de: armar la URL, poner headers, mandar el token
+// y convertir los errores de la API en errores de JavaScript.
+export async function apiFetch(endpoint, { method = 'GET', body } = {}) {
+  const headers = {}
 
-apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    headers.Authorization = `Bearer ${token}`
   }
-  return config
-})
 
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Un login con contraseña incorrecta también responde 401: ese error lo muestra el formulario
-    const isLogin = error.config?.url === '/auth/login'
-
-    if (error.response?.status === 401 && !isLogin) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.assign('/auth/login')
-    }
-
-    return Promise.reject(error)
+  // Los archivos (FormData) se mandan tal cual; todo lo demás, como JSON
+  const isFile = body instanceof FormData
+  if (body && !isFile) {
+    headers['Content-Type'] = 'application/json'
+    body = JSON.stringify(body)
   }
-)
 
-// El back siempre manda { message } en español
-export const getErrorMessage = (error) => {
-  return error.response?.data?.message ?? 'No se pudo conectar con el servidor'
+  const response = await fetch(`${API_URL}${endpoint}`, { method, headers, body })
+
+  // Sesión vencida: se borra y se regresa al login.
+  // El login con contraseña incorrecta también responde 401, pero ese error lo muestra el formulario
+  if (response.status === 401 && endpoint !== '/auth/login') {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.location.assign('/auth/login')
+  }
+
+  // Algunas respuestas pueden venir sin cuerpo
+  const data = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(data?.message || 'Ocurrió un error en la petición')
+  }
+  return data
+}
+
+// Descarga un archivo protegido (los documentos de laboratorio).
+// Un <a href> no sirve, porque no manda el token
+export async function downloadFile(endpoint, fileName) {
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+  })
+  if (!response.ok) {
+    throw new Error('No se pudo descargar el archivo')
+  }
+
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  link.click()
+  URL.revokeObjectURL(url)
 }
 ```
 
-Cada recurso tiene su archivo con una función por endpoint. Todas regresan directamente `data`:
+Igual que en clase, el mensaje en español que manda el back queda en `error.message`.
+
+Cada recurso tiene su archivo, con una función por endpoint:
 
 Archivo: `src/api/auth.js`
 
 ```js
-import { apiClient } from './client'
+import { apiFetch } from './client'
 
-export const loginRequest = (credentials) => apiClient.post('/auth/login', credentials).then((response) => response.data)
+export function loginRequest(credentials) {
+  return apiFetch('/auth/login', { method: 'POST', body: credentials })
+}
 
-export const registerRequest = (data) => apiClient.post('/auth/register', data).then((response) => response.data)
+export function registerRequest(userData) {
+  return apiFetch('/auth/register', { method: 'POST', body: userData })
+}
 
-export const getMeRequest = () => apiClient.get('/auth/me').then((response) => response.data)
+export function getMeRequest() {
+  return apiFetch('/auth/me')
+}
 
-export const updateMeRequest = (data) => apiClient.put('/auth/me', data).then((response) => response.data)
+export function updateMeRequest(userData) {
+  return apiFetch('/auth/me', { method: 'PUT', body: userData })
+}
 
-export const changePasswordRequest = (data) => apiClient.put('/auth/change-password', data).then((response) => response.data)
+export function changePasswordRequest(passwords) {
+  return apiFetch('/auth/change-password', { method: 'PUT', body: passwords })
+}
 
-export const forgotPasswordRequest = (email) => apiClient.post('/auth/forgot-password', { email }).then((response) => response.data)
+export function forgotPasswordRequest(email) {
+  return apiFetch('/auth/forgot-password', { method: 'POST', body: { email } })
+}
 
-export const verifyOtpRequest = (data) => apiClient.post('/auth/verify-otp', data).then((response) => response.data)
+export function verifyOtpRequest(data) {
+  return apiFetch('/auth/verify-otp', { method: 'POST', body: data })
+}
 
-export const resetPasswordRequest = (data) => apiClient.post('/auth/reset-password', data).then((response) => response.data)
+export function resetPasswordRequest(data) {
+  return apiFetch('/auth/reset-password', { method: 'POST', body: data })
+}
 ```
 
 Los demás archivos de `api/` siguen el mismo formato, con las rutas de la sección 5 del spec. Por ejemplo:
@@ -326,15 +369,33 @@ Los demás archivos de `api/` siguen el mismo formato, con las rutas de la secci
 Archivo: `src/api/patients.js`
 
 ```js
-import { apiClient } from './client'
+import { apiFetch } from './client'
 
-export const getPatientsRequest = (search) => apiClient.get('/patients', { params: { search } }).then((response) => response.data)
+export function getPatientsRequest() {
+  return apiFetch('/patients')
+}
 
-export const getPatientRequest = (id) => apiClient.get(`/patients/${id}`).then((response) => response.data)
+export function getPatientRequest(id) {
+  return apiFetch(`/patients/${id}`)
+}
 
-export const createPatientRequest = (data) => apiClient.post('/patients', data).then((response) => response.data)
+export function createPatientRequest(patientData) {
+  return apiFetch('/patients', { method: 'POST', body: patientData })
+}
 
-export const updatePatientRequest = (id, data) => apiClient.put(`/patients/${id}`, data).then((response) => response.data)
+export function updatePatientRequest(id, patientData) {
+  return apiFetch(`/patients/${id}`, { method: 'PUT', body: patientData })
+}
+```
+
+Para subir un archivo, se arma un `FormData` y se manda como `body`:
+
+```js
+const formData = new FormData()
+formData.append('file', archivo)
+formData.append('description', 'Química sanguínea')
+
+apiFetch('/lab-documents', { method: 'POST', body: formData })
 ```
 
 ## Paso 1.6 — Sesión con `AuthContext`
@@ -346,7 +407,6 @@ Archivo: `src/context/AuthContext.jsx`
 ```jsx
 import { createContext, useContext, useState } from 'react'
 import { loginRequest, registerRequest, getMeRequest } from '@/api/auth'
-import { queryClient } from '@/lib/query-client'
 
 const AuthContext = createContext(null)
 
@@ -390,7 +450,6 @@ export function AuthProvider({ children }) {
   function logout() {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
-    queryClient.clear()
     setUser(null)
   }
 
@@ -404,8 +463,6 @@ export function useAuth() {
   return useContext(AuthContext)
 }
 ```
-
-`queryClient.clear()` borra los datos guardados en caché, para que al cambiar de usuario no se vean los del anterior.
 
 A dónde va cada usuario según su estado. Lo usan el login y las rutas protegidas:
 
@@ -431,219 +488,326 @@ export const getHomePath = (user) => {
 
 ## Paso 1.7 — Rutas protegidas
 
-Igual que el `ProtectedRoute` de clase, pero revisa también el rol. Un paciente que aún no termina su primer ingreso solo puede entrar a esas pantallas.
+Es el `ProtectedRoute` de clase: sin sesión, al login; con sesión, muestra la ruta hija con `<Outlet />`. Le agregamos una sola revisión más: **cada usuario solo entra a su área**. Para saber cuál es, usamos `getHomePath(user)` (paso 1.6):
+
+| Usuario | Su área |
+|---|---|
+| Nutriólogo | `/nutriologo` |
+| Paciente que no ha cambiado su contraseña temporal | `/primer-ingreso/contrasena` |
+| Paciente que no ha llenado sus datos | `/primer-ingreso/datos` |
+| Paciente que ya terminó su primer ingreso | `/paciente` |
+
+Si la ruta que pidió no empieza con su área, lo mandamos a ella. Así un paciente no entra a `/nutriologo`, un nutriólogo no entra a `/paciente` y un paciente nuevo no se salta el primer ingreso.
 
 Archivo: `src/components/ProtectedRoute.jsx`
 
 ```jsx
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { getHomePath } from '@/lib/home-path'
 
-export function ProtectedRoute({ role, firstAccess = false }) {
-  const { user } = useAuth()
+function ProtectedRoute() {
+  const { user, isAuthenticated } = useAuth()
+  const location = useLocation()
 
-  if (!user) {
+  // Sin sesión: lo mandamos al login
+  if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />
   }
 
-  if (role && user.role !== role) {
-    return <Navigate to={getHomePath(user)} replace />
-  }
-
-  // El paciente pasa primero por el cambio de contraseña y el onboarding
+  // Cada usuario solo entra a su área: el nutriólogo a /nutriologo, el paciente a /paciente,
+  // y el paciente nuevo a /primer-ingreso hasta que cambie su contraseña y llene sus datos
   const home = getHomePath(user)
-  const isFirstAccessPending = home.startsWith('/primer-ingreso')
-  if (role === 'patient' && isFirstAccessPending !== firstAccess) {
+  if (!location.pathname.startsWith(home)) {
     return <Navigate to={home} replace />
   }
 
+  // Con sesión y en su área: mostramos la ruta hija que se pidió
   return <Outlet />
 }
+
+export default ProtectedRoute
 ```
 
 **Es solo para la experiencia de uso.** La seguridad real está en el back: aunque alguien entre a una ruta que no le toca, la API le responde `403`.
 
-## Paso 1.8 — Providers y router
+## Paso 1.8 — Rutas en `App.jsx`, como en clase
 
-Archivo: `src/providers.jsx`
+Igual que en el proyecto de clase, `main.jsx` pone el `BrowserRouter` y los providers, y `App.jsx` declara las rutas con `<Routes>` y `<Route>`. No usamos `createBrowserRouter`, ni `router.jsx`, ni `providers.jsx`.
+
+Archivo: `src/main.jsx`
 
 ```jsx
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClient } from '@/lib/query-client'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
 import { Toaster } from '@/components/ui/toast'
+import './index.css'
+import App from './App.jsx'
 
-function Providers({ children }) {
-  return (
-    <QueryClientProvider client={queryClient}>
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <BrowserRouter>
       <AuthProvider>
-        <Toaster>{children}</Toaster>
+        <Toaster>
+          <App />
+        </Toaster>
       </AuthProvider>
-    </QueryClientProvider>
-  )
-}
-
-export default Providers
+    </BrowserRouter>
+  </StrictMode>,
+)
 ```
 
-En `main.jsx` solo cambian los imports: `Providers` desde `@/providers` y `router` desde `@/router`.
+`Toaster` va aquí una sola vez, para que los toasts se vean en todas las pantallas. Los contextos de datos del nutriólogo (pacientes, citas) **no** van aquí, sino en su layout (paso 1.9).
 
-El router declara todas las pantallas. Las que todavía no existen se crean en las Partes 1 a 4; mientras tanto, puede apuntar a una página vacía.
-
-Archivo: `src/router.jsx`
+Archivo: `src/App.jsx`
 
 ```jsx
-import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { ProtectedRoute } from '@/components/ProtectedRoute'
-import NutritionistLayout from '@/layouts/NutritionistLayout'
-import PatientLayout from '@/layouts/PatientLayout'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import NutricionistaLayout from '@/layouts/NutricionistaLayout'
+import PacienteLayout from '@/layouts/PacienteLayout'
 import LandingPage from '@/pages/landing/LandingPage'
 import LoginPage from '@/pages/auth/LoginPage'
 import SignupPage from '@/pages/auth/SignupPage'
 import RecoveryPage from '@/pages/auth/RecoveryPage'
 import ChangeTemporaryPasswordPage from '@/pages/primer-ingreso/ChangeTemporaryPasswordPage'
 import OnboardingPage from '@/pages/primer-ingreso/OnboardingPage'
-import NutritionistDashboardPage from '@/pages/nutriologo/DashboardPage'
-import PatientsPage from '@/pages/nutriologo/PatientsPage'
-import PatientDetailPage from '@/pages/nutriologo/PatientDetailPage'
-import MealPlanBuilderPage from '@/pages/nutriologo/MealPlanBuilderPage'
-import RecipesPage from '@/pages/nutriologo/RecipesPage'
-import ReportsPage from '@/pages/nutriologo/ReportsPage'
-import NutritionistChatPage from '@/pages/nutriologo/ChatPage'
-import NutritionistProfilePage from '@/pages/nutriologo/ProfilePage'
-import MealPlanPage from '@/pages/paciente/MealPlanPage'
-import CompliancePage from '@/pages/paciente/CompliancePage'
-import DailySurveyPage from '@/pages/paciente/DailySurveyPage'
-import ProgressPage from '@/pages/paciente/ProgressPage'
-import DocumentsPage from '@/pages/paciente/DocumentsPage'
-import PatientChatPage from '@/pages/paciente/ChatPage'
-import PatientProfilePage from '@/pages/paciente/ProfilePage'
+import NutricionistaDashboardPage from '@/pages/nutriologo/NutricionistaDashboardPage'
+import NutricionistaCalendarioPage from '@/pages/nutriologo/NutricionistaCalendarioPage'
+import NutricionistaPacienteDetallePage from '@/pages/nutriologo/NutricionistaPacienteDetallePage'
+import NutricionistaChatPage from '@/pages/nutriologo/NutricionistaChatPage'
+import NutricionistaPerfilPage from '@/pages/nutriologo/NutricionistaPerfilPage'
+import PacientePlanAlimenticioPage from '@/pages/paciente/PacientePlanAlimenticioPage'
+import PacienteCumplimientoPage from '@/pages/paciente/PacienteCumplimientoPage'
+import PacienteCuestionariosPage from '@/pages/paciente/PacienteCuestionariosPage'
+import PacienteProgresoPage from '@/pages/paciente/PacienteProgresoPage'
+import PacienteChatPage from '@/pages/paciente/PacienteChatPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
-export const router = createBrowserRouter([
-  { path: '/', element: <LandingPage /> },
-  { path: '/auth/login', element: <LoginPage /> },
-  { path: '/auth/signin', element: <SignupPage /> },
-  { path: '/auth/recovery', element: <RecoveryPage /> },
-  {
-    path: '/primer-ingreso',
-    element: <ProtectedRoute role="patient" firstAccess />,
-    children: [
-      { path: 'contrasena', element: <ChangeTemporaryPasswordPage /> },
-      { path: 'datos', element: <OnboardingPage /> },
-    ],
-  },
-  {
-    path: '/nutriologo',
-    element: <ProtectedRoute role="nutritionist" />,
-    children: [
-      {
-        element: <NutritionistLayout />,
-        children: [
-          { index: true, element: <Navigate to="dashboard" replace /> },
-          { path: 'dashboard', element: <NutritionistDashboardPage /> },
-          { path: 'pacientes', element: <PatientsPage /> },
-          { path: 'pacientes/:id', element: <PatientDetailPage /> },
-          { path: 'pacientes/:id/plan', element: <MealPlanBuilderPage /> },
-          { path: 'recetas', element: <RecipesPage /> },
-          { path: 'reportes', element: <ReportsPage /> },
-          { path: 'chat', element: <NutritionistChatPage /> },
-          { path: 'perfil', element: <NutritionistProfilePage /> },
-        ],
-      },
-    ],
-  },
-  {
-    path: '/paciente',
-    element: <ProtectedRoute role="patient" />,
-    children: [
-      {
-        element: <PatientLayout />,
-        children: [
-          { index: true, element: <Navigate to="plan-alimenticio" replace /> },
-          { path: 'plan-alimenticio', element: <MealPlanPage /> },
-          { path: 'cumplimiento', element: <CompliancePage /> },
-          { path: 'cuestionario', element: <DailySurveyPage /> },
-          { path: 'progreso', element: <ProgressPage /> },
-          { path: 'documentos', element: <DocumentsPage /> },
-          { path: 'chat', element: <PatientChatPage /> },
-          { path: 'perfil', element: <PatientProfilePage /> },
-        ],
-      },
-    ],
-  },
-  { path: '*', element: <NotFoundPage /> },
-])
+function App() {
+  return (
+    <Routes>
+      {/* Rutas públicas */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/signin" element={<SignupPage />} />
+      <Route path="/auth/recovery" element={<RecoveryPage />} />
+
+      {/* Rutas privadas: solo con sesión iniciada */}
+      <Route element={<ProtectedRoute />}>
+        {/* Primer ingreso del paciente: sin menú lateral */}
+        <Route path="/primer-ingreso/contrasena" element={<ChangeTemporaryPasswordPage />} />
+        <Route path="/primer-ingreso/datos" element={<OnboardingPage />} />
+
+        {/* Nutriólogo */}
+        <Route path="/nutriologo" element={<NutricionistaLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<NutricionistaDashboardPage />} />
+          <Route path="calendario" element={<NutricionistaCalendarioPage />} />
+          <Route path="pacientes/:id" element={<NutricionistaPacienteDetallePage />} />
+          <Route path="chat" element={<NutricionistaChatPage />} />
+          <Route path="perfil" element={<NutricionistaPerfilPage />} />
+        </Route>
+
+        {/* Paciente */}
+        <Route path="/paciente" element={<PacienteLayout />}>
+          <Route index element={<Navigate to="plan-alimenticio" replace />} />
+          <Route path="plan-alimenticio" element={<PacientePlanAlimenticioPage />} />
+          <Route path="cumplimiento" element={<PacienteCumplimientoPage />} />
+          <Route path="cuestionarios" element={<PacienteCuestionariosPage />} />
+          <Route path="progreso" element={<PacienteProgresoPage />} />
+          <Route path="chat" element={<PacienteChatPage />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  )
+}
+
+export default App
 ```
 
-**Cambios respecto a hoy:**
+Cómo se lee:
 
-- Se quita `/nutriologo/calendario`, porque el calendario pasa al dashboard.
-- Se agregan Pacientes, Recetas, Reportes, Documentos del paciente y los dos perfiles.
-- `/paciente/cuestionarios` pasa a `/paciente/cuestionario` (ver el paso 3.2).
+- Las rutas públicas van sueltas, como `/login` y `/register` en clase.
+- `<Route element={<ProtectedRoute />}>` no tiene `path`: solo envuelve a las rutas privadas, igual que en clase.
+- Las rutas del nutriólogo y del paciente van dentro de su layout, que pone el menú lateral y el `<Outlet />` donde se pinta cada página. `index` es lo que se muestra al entrar a `/nutriologo` o `/paciente`.
+- Las de primer ingreso no tienen layout con menú: usan `PrimerIngresoLayout` dentro de la propia página.
 
-Actualiza los menús laterales (`NutricionistaSidebar` y `PacienteSidebar`) con estas rutas, y agrega un botón de **Cerrar sesión** que llame a `logout()` y lleve a `/auth/login`.
+**Cada quien agrega sus rutas a `App.jsx` cuando crea la página.** Las que faltan:
 
-## Paso 1.9 — Consultas con TanStack Query
+| Parte | Ruta | Página |
+|---|---|---|
+| 2 (Leo) | `/nutriologo/pacientes` | Pacientes |
+| 2 (Leo) | quitar `/nutriologo/calendario` | El calendario pasa al dashboard |
+| 3 (Fer) | `/paciente/cuestionarios` pasa a `/paciente/cuestionario` | Cuestionario diario (paso 3.2) |
+| 3 (Fer) | `/paciente/documentos`, `/paciente/perfil` | Documentos y perfil del paciente |
+| 4 (Dante) | `/nutriologo/pacientes/:id/plan`, `/nutriologo/recetas`, `/nutriologo/reportes` | Constructor, recetas y reportes |
 
-Cada recurso tiene un archivo en `hooks/` con sus consultas y sus cambios. Las pantallas solo usan estos hooks: no llaman a axios directamente.
+Al agregar una ruta, agrega también su enlace en el menú lateral (`NutricionistaSidebar` o `PacienteSidebar`). Los dos menús ya muestran el nombre del usuario con sesión y su botón **Cerrar sesión** llama a `logout()` y lleva a `/auth/login`.
 
-Archivo: `src/hooks/usePatients.js`
-
-```js
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getPatientsRequest, getPatientRequest, createPatientRequest } from '@/api/patients'
-import { getErrorMessage } from '@/api/client'
-import { notifySuccess, notifyError } from '@/lib/notify'
-
-export const usePatients = (search) => {
-  return useQuery({
-    queryKey: ['patients', search],
-    queryFn: () => getPatientsRequest(search),
-  })
-}
-
-export const usePatient = (id) => {
-  return useQuery({
-    queryKey: ['patients', id],
-    queryFn: () => getPatientRequest(id),
-  })
-}
-
-export const useCreatePatient = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: createPatientRequest,
-    onSuccess: (data) => {
-      // Recarga la lista para que aparezca el paciente nuevo
-      queryClient.invalidateQueries({ queryKey: ['patients'] })
-      if (data.emailSent) {
-        notifySuccess('Paciente creado', 'Le enviamos su contraseña temporal por correo')
-      } else {
-        notifyError('Paciente creado, pero no se envió el correo', 'Usa "Reenviar acceso" más tarde')
-      }
-    },
-    onError: (error) => notifyError('No se pudo crear el paciente', getErrorMessage(error)),
-  })
-}
-```
-
-En una pantalla:
+Todas las páginas se exportan igual que en clase:
 
 ```jsx
-const { data: patients = [], isLoading, isError } = usePatients(search)
-const createPatient = useCreatePatient()
+function PacientesPage() {
+  // ...
+}
 
-createPatient.mutate(formData) // y createPatient.isPending para deshabilitar el botón
+export default PacientesPage
+```
+
+## Paso 1.9 — Datos de la API: contextos y hooks
+
+Usamos las dos formas que vimos en clase, según quién necesita los datos:
+
+| Los datos los usan… | Se cargan con… | Ejemplos |
+|---|---|---|
+| Varias pantallas | Un **contexto**, como `BooksContext` | La lista de pacientes (página de pacientes, agendar cita, chat) y las citas (dashboard y agendar) |
+| Una sola pantalla | Un **hook** con `useEffect` | El expediente de un paciente, su progreso, la conversación abierta, el plan del paciente |
+
+Las páginas no llaman a `apiFetch` directamente: usan un contexto o un hook.
+
+### Contexto: la lista de pacientes
+
+Es el mismo patrón que `BooksContext`. Al cambiar algo, vuelve a pedir la lista, porque el back es quien calcula el semáforo y los demás datos del panel:
+
+Archivo: `src/context/PatientsContext.jsx`
+
+```jsx
+import { createContext, useContext, useEffect, useState } from 'react'
+import { getPatientsRequest, createPatientRequest, updatePatientRequest } from '@/api/patients'
+
+const PatientsContext = createContext(null)
+
+export function PatientsProvider({ children }) {
+  const [patients, setPatients] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // Al entrar al área del nutriólogo cargamos sus pacientes
+  useEffect(() => {
+    async function loadPatients() {
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await getPatientsRequest()
+        setPatients(data)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadPatients()
+  }, [])
+
+  async function addPatient(patientData) {
+    const data = await createPatientRequest(patientData) // { patient, clinicalHistory, emailSent }
+    setPatients(await getPatientsRequest())
+    return data
+  }
+
+  async function editPatient(id, patientData) {
+    await updatePatientRequest(id, patientData)
+    setPatients(await getPatientsRequest())
+  }
+
+  const value = { patients, loading, error, addPatient, editPatient }
+
+  return <PatientsContext value={value}>{children}</PatientsContext>
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function usePatients() {
+  return useContext(PatientsContext)
+}
+```
+
+Los contextos de datos del nutriólogo van en su layout, no en `main.jsx`: así solo se cargan cuando entra un nutriólogo. `NutricionistaLayout` ya envuelve su contenido con `PatientsProvider`; los contextos nuevos (por ejemplo `AppointmentsProvider`) se agregan igual:
+
+```jsx
+<PatientsProvider>
+  {/* ...el SidebarProvider y lo demás que ya tiene el layout... */}
+</PatientsProvider>
+```
+
+La página que muestra la lista y crea pacientes maneja la carga, los errores y los toasts, igual que `BooksPage` en clase:
+
+```jsx
+const { patients, loading, error, addPatient } = usePatients()
+
+async function handleCreate(patientData) {
+  try {
+    const data = await addPatient(patientData)
+    if (data.emailSent) {
+      toast.add({ title: 'Paciente creado', description: 'Le enviamos su contraseña temporal por correo', type: 'success' })
+    } else {
+      toast.add({ title: 'Paciente creado, pero no se envió el correo', description: 'Usa "Reenviar acceso" más tarde', type: 'warning' })
+    }
+  } catch (err) {
+    toast.add({ title: 'No se pudo crear el paciente', description: err.message, type: 'error' })
+  }
+}
+```
+
+La búsqueda se hace en la misma página, filtrando `patients` por nombre o correo. No hace falta volver a pedirlos a la API.
+
+### Hook: datos de una sola pantalla
+
+Para lo que solo usa una pantalla, un hook con el mismo patrón. `reload` vuelve a cargar los datos después de guardar algo:
+
+Archivo: `src/hooks/usePatientDetail.js`
+
+```js
+import { useEffect, useState } from 'react'
+import { getPatientRequest } from '@/api/patients'
+
+// Expediente de un paciente: { patient, clinicalHistory, adherence }
+export function usePatientDetail(id) {
+  const [detail, setDetail] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  // Cada vez que cambia, el efecto vuelve a cargar los datos
+  const [version, setVersion] = useState(0)
+
+  useEffect(() => {
+    async function loadDetail() {
+      setLoading(true)
+      setError(null)
+      try {
+        setDetail(await getPatientRequest(id))
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDetail()
+  }, [id, version])
+
+  const reload = () => setVersion((current) => current + 1)
+
+  return { detail, loading, error, reload }
+}
+```
+
+En la página:
+
+```jsx
+const { id } = useParams()
+const { detail, loading, error, reload } = usePatientDetail(id)
 ```
 
 **Reglas:**
 
 - Toda pantalla muestra tres estados: carga (`Skeleton` o `Spinner`), error y vacío (`Empty`).
-- Después de guardar, se invalida la consulta afectada para que se recargue sola. Así no hace falta copiar datos a un estado local.
-- Los toasts de éxito y de error van en los hooks, no en las pantallas.
+- Después de guardar, se vuelve a cargar lo que cambió: con la función del contexto, o con `reload()` del hook.
+- Los toasts de éxito y de error van en la página, junto al `try/catch`, como el `alert` de `BooksPage` en clase.
 
 ## Paso 1.10 — Formularios con React Hook Form y Zod
 
@@ -692,7 +856,7 @@ El mínimo de 8 caracteres es el mismo que pide el back.
 
 ## Paso 1.11 — Login
 
-El diseño del login se conserva; las correcciones que pidió el profesor se aplican aquí cuando las revisemos. La lógica queda así:
+Se conserva el diseño del login (título, enlace de "¿Olvidaste tu contraseña?" junto a la etiqueta y enlace al registro); lo que cambia es que ahora usa React Hook Form, Zod y el `login()` del contexto.
 
 Archivo: `src/components/auth/LoginForm.jsx`
 
@@ -703,9 +867,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { FormField } from '@/components/FormField'
 import { useAuth } from '@/context/AuthContext'
-import { getErrorMessage } from '@/api/client'
 import { getHomePath } from '@/lib/home-path'
 import { loginSchema } from '@/schemas/auth'
 
@@ -724,30 +888,63 @@ export function LoginForm() {
     setApiError(null)
     try {
       const user = await login(email, password)
+      // Cada usuario va a su inicio (el paciente nuevo, a su primer ingreso)
       navigate(getHomePath(user), { replace: true })
     } catch (error) {
-      setApiError(getErrorMessage(error))
+      setApiError(error.message)
     }
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
-      {apiError && <p className="text-sm text-destructive">{apiError}</p>}
+      <div className="space-y-1.5 text-center">
+        <h1 className="font-heading text-2xl font-bold text-foreground">Bienvenido de nuevo</h1>
+        <p className="text-sm text-muted-foreground">Ingresa tus credenciales para continuar.</p>
+      </div>
 
-      <FormField label="Correo" htmlFor="email" error={errors.email}>
-        <Input id="email" type="email" autoComplete="email" {...register('email')} />
-      </FormField>
+      {apiError && <p className="text-center text-sm text-destructive">{apiError}</p>}
 
-      <FormField label="Contraseña" htmlFor="password" error={errors.password}>
-        <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
-      </FormField>
+      <FieldGroup>
+        <FormField label="Correo electrónico" htmlFor="email" error={errors.email}>
+          <Input
+            id="email"
+            type="email"
+            placeholder="tu@correo.com"
+            autoComplete="email"
+            aria-invalid={Boolean(errors.email)}
+            {...register('email')}
+          />
+        </FormField>
+
+        {/* Este campo no usa FormField porque lleva el enlace junto a la etiqueta */}
+        <Field data-invalid={Boolean(errors.password)}>
+          <div className="flex items-center justify-between">
+            <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+            <Link to="/auth/recovery" className="text-sm font-medium text-primary hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            autoComplete="current-password"
+            aria-invalid={Boolean(errors.password)}
+            {...register('password')}
+          />
+          <FieldError errors={errors.password ? [errors.password] : undefined} />
+        </Field>
+      </FieldGroup>
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? 'Ingresando...' : 'Ingresar'}
+        {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
       </Button>
 
-      <p className="text-center text-sm">
-        <Link to="/auth/recovery">¿Olvidaste tu contraseña?</Link>
+      <p className="text-center text-sm text-muted-foreground">
+        ¿No tienes cuenta?{' '}
+        <Link to="/auth/signin" className="font-semibold text-primary hover:underline">
+          Regístrate
+        </Link>
       </p>
     </form>
   )
@@ -755,19 +952,56 @@ export function LoginForm() {
 ```
 
 - El error del login (correo o contraseña incorrectos) se muestra en el formulario, no en un toast, porque es parte de llenarlo.
+- Igual que en clase, `error.message` trae el mensaje en español del back.
 - `getHomePath` lleva a cada usuario a su lugar, incluido el primer ingreso del paciente.
-- Si el usuario ya tiene sesión y abre `/auth/login`, redirígelo con `getHomePath(user)`.
+
+Si el usuario ya tiene sesión y abre el login o el registro, la página lo manda a su inicio:
+
+Archivo: `src/pages/auth/LoginPage.jsx`
+
+```jsx
+import { Navigate } from 'react-router-dom'
+import { AuthLayout } from '@/components/auth/AuthLayout'
+import { LoginForm } from '@/components/auth/LoginForm'
+import { authContent } from '@/data/auth-content'
+import { useAuth } from '@/context/AuthContext'
+import { getHomePath } from '@/lib/home-path'
+
+function LoginPage() {
+  const { user, isAuthenticated } = useAuth()
+
+  // Si ya inició sesión, no tiene caso mostrarle el formulario
+  if (isAuthenticated) {
+    return <Navigate to={getHomePath(user)} replace />
+  }
+
+  return (
+    <AuthLayout {...authContent.login}>
+      <LoginForm />
+    </AuthLayout>
+  )
+}
+
+export default LoginPage
+```
 
 ## Paso 1.12 — Registro, recuperación y primer ingreso
 
-| Pantalla | Qué cambia | API (sección 5.1 del spec) |
+| Pantalla | Archivos | API (sección 5.1 del spec) |
 |---|---|---|
-| Registro (`/auth/signin`) | Pedir nombre, apellido paterno, apellido materno (opcional) y cédula, en lugar de un solo `fullName`. Al registrarse queda con sesión iniciada | `POST /auth/register` con `register()` del contexto |
-| Recuperación (`/auth/recovery`) | Un solo `RecoveryPage` con los tres pasos: correo, código y contraseña nueva. Guarda el correo y el código en el estado de la página y borra `RecoveryFlowContext` | `forgot-password`, `verify-otp`, `reset-password` |
-| Cambio de contraseña temporal (`/primer-ingreso/contrasena`) | Pantalla nueva, sin menú lateral. Al guardar, `refreshUser()` y navegar con `getHomePath` | `PUT /auth/change-password` |
-| Onboarding (`/primer-ingreso/datos`) | Pantalla nueva. Cargar con `GET /onboarding` y mandar `identification` completo. Al guardar, `refreshUser()` | `GET` y `PUT /onboarding` |
+| Registro (`/auth/signin`) | `SignupForm` pide nombre, apellido paterno, apellido materno (opcional), cédula (opcional), correo y contraseña. Al registrarse queda con sesión iniciada. Solo se registran nutriólogos: a los pacientes los da de alta su nutriólogo | `POST /auth/register` con `register()` del contexto |
+| Recuperación (`/auth/recovery`) | `pages/auth/RecoveryPage.jsx` guarda en su estado el paso (`email`, `code`, `password`), el correo y el código, y se los pasa a `RecoveryEmailForm`, `RecoveryOtpForm` y `RecoveryNewPasswordForm`. Ya no hay `RecoveryFlowContext` ni una ruta por paso | `forgot-password`, `verify-otp`, `reset-password` |
+| Cambio de contraseña temporal (`/primer-ingreso/contrasena`) | `pages/primer-ingreso/ChangeTemporaryPasswordPage.jsx`. Al guardar, `refreshUser()` y navegar con `getHomePath` | `PUT /auth/change-password` |
+| Onboarding (`/primer-ingreso/datos`) | `pages/primer-ingreso/OnboardingPage.jsx`, con `hooks/useOnboarding.js`, `api/onboarding.js` y `schemas/onboarding.js`. Empieza con lo que el nutriólogo ya llenó. Las listas (metas, alergias…) se escriben separadas por comas. Como el back reemplaza cada sección completa, se manda junto con lo que ya tenía. Al guardar, `refreshUser()` | `GET` y `PUT /onboarding` |
 
-**Error de lint pendiente:** `components/auth/AuthLayout.jsx` elige la imagen con `Math.random()` dentro de `useMemo`, y React no lo permite durante el render. Elige la imagen una sola vez fuera del componente:
+Para fechas y opciones se usan los componentes de shadcn, no los nativos del navegador:
+
+- **Fechas:** `components/DatePicker.jsx` (un `Popover` con el `Calendar` de shadcn, en español y con selector de mes y año). Recibe y regresa la fecha como texto `"yyyy-MM-dd"`. Con React Hook Form se conecta con `<Controller>`.
+- **Opciones:** el `Select` de shadcn, también con `<Controller>`. En el onboarding está el componente `FormSelect` como ejemplo.
+
+Las dos pantallas de primer ingreso usan `layouts/PrimerIngresoLayout.jsx`: logo, "Paso 1 de 2", título y un botón para cerrar sesión, sin menú lateral.
+
+En `components/auth/AuthLayout.jsx` la imagen aleatoria se elige fuera del componente, porque React no permite `Math.random()` durante el render:
 
 ```js
 // Fuera del componente: se elige una vez al cargar la página
@@ -862,7 +1096,7 @@ El dashboard queda con dos cosas: las **citas de hoy** y el **calendario de la s
 - **Paleta:** el fondo de la cuadrícula es el espacio libre, y cada cita usa el color de su estado (`APPOINTMENT_STATUS`). Agrega una leyenda con los colores arriba del calendario.
 - Botones de semana anterior, siguiente y "Hoy".
 - Al hacer clic en un espacio libre, abre "Agendar cita" con ese día y esa hora.
-- Pide solo la semana visible: `GET /appointments?from=<lunes>&to=<domingo>`.
+- Las citas se cargan con un `AppointmentsContext`, igual que `PatientsContext` (paso 1.9), con una función para cargar la semana visible: `GET /appointments?from=<lunes>&to=<domingo>`. Lo usan el dashboard y "Agendar cita", así que va en el layout del nutriólogo junto a `PatientsProvider`.
 
 Para ubicar cada bloque en la cuadrícula:
 
@@ -904,7 +1138,7 @@ Al terminar, borra `NutricionistaCalendarioPage`, `CalendarioMensual` y la opci�
 
 Reutiliza `AgendarCitaModal` con tres cambios:
 
-1. **Paciente con búsqueda:** cambia el `<select>` por el `Combobox` de shadcn (`components/ui/combobox.jsx`), con los pacientes de `usePatients()`.
+1. **Paciente con búsqueda:** cambia el `<select>` por el `Combobox` de shadcn (`components/ui/combobox.jsx`), con los pacientes de `usePatients()` (`PatientsContext`).
 2. **Horarios disponibles:** quita el `<input type="time">`. Al elegir el día, muestra botones con los horarios cada 30 minutos; los que se cruzan con otra cita aparecen deshabilitados.
 3. **Modalidad:** `Presencial` y `Online` se mandan como `modality: 'in-person'` y `'video-call'`.
 
@@ -951,10 +1185,10 @@ Para saber qué está ocupado, pide las citas de ese día (`GET /appointments?fr
 
 Página nueva `/nutriologo/pacientes`, con lo que hoy está en el dashboard:
 
-- `BuscadorPacientes` y `PacienteCard`, con `usePatients(search)`.
+- `BuscadorPacientes` y `PacienteCard`, con `usePatients()` de `PatientsContext`, filtrando por nombre o correo en la página.
 - La tarjeta muestra el semáforo (`adherence.status`), la última consulta, el peso actual y la meta. Todo viene en `GET /patients` (sección 5.2 del spec).
-- El botón **Nuevo paciente** abre un diálogo con su formulario (React Hook Form + Zod) y usa `useCreatePatient()`. Esto reemplaza el único `alert()` que tiene hoy el proyecto.
-- Un interruptor para ver también a los inactivos (`includeInactive=true`).
+- El botón **Nuevo paciente** abre un diálogo con su formulario (React Hook Form + Zod) y usa `addPatient()` del contexto, con el toast del ejemplo del paso 1.9. Esto reemplaza el único `alert()` que tiene hoy el proyecto.
+- Un interruptor para ver también a los inactivos: `GET /patients?includeInactive=true`. Agrega ese parámetro a `getPatientsRequest` en `api/patients.js`.
 
 ## Paso 2.5 — Expediente del paciente
 
@@ -969,16 +1203,10 @@ Página nueva `/nutriologo/pacientes`, con lo que hoy está en el dashboard:
 | `ExpedienteDocumentosTab` | Lista, descarga y subida de documentos | `/lab-documents` |
 | `ExpedientePlanTab` | Resumen del plan activo, con un botón que lleva al constructor (Parte 4) | `GET /meal-plans/active?patientId=` |
 
-**La descarga de documentos se hace con `fetch` o axios, no con un enlace.** Un `<a href>` no manda el token:
+**La descarga de documentos usa `downloadFile` de `api/client.js`, no un enlace**, porque un `<a href>` no manda el token:
 
 ```js
-const { data } = await apiClient.get(`/lab-documents/${document._id}/file`, { responseType: 'blob' })
-const url = URL.createObjectURL(data)
-const link = window.document.createElement('a')
-link.href = url
-link.download = document.originalName
-link.click()
-URL.revokeObjectURL(url)
+await downloadFile(`/lab-documents/${document._id}/file`, document.originalName)
 ```
 
 ## Paso 2.6 — Chat y perfil
@@ -1120,8 +1348,7 @@ Al asignar una receta, se **copian** al plan su nombre (`title`), su id (`recipe
 
 ## Paso 5.1 — Limpieza
 
-- [ ] Borrar `features/nutricionista/data/mock-data.js` y `features/paciente/data/mock-data.js`, y que ningún import los use.
-- [ ] Borrar la carpeta `features/`, que debe quedar vacía.
+- [ ] Borrar la carpeta `src/mocks/`, y que ningún import la use.
 - [ ] Buscar que no quede ningún aviso del navegador: `grep -rnE "alert\(|confirm\(|prompt\(" src --exclude-dir=ui` no debe encontrar nada.
 - [ ] Actualizar `docs/frontend/README.md` con la estructura nueva, y revisar que `AGENTS.md` y `docs/backend/README.md` sigan siendo ciertos.
 - [ ] `pnpm lint` y `pnpm build` sin errores.

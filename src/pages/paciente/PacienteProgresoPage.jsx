@@ -1,5 +1,5 @@
-import PacienteProgreso from '@/features/paciente/components/PacienteProgreso'
-import { progresoPacienteMock } from '@/features/paciente/data/mock-data'
+import PacienteProgreso from '@/components/paciente/PacienteProgreso'
+import { progresoPacienteMock } from '@/mocks/paciente'
 
 /**
  * Página de Progreso del Paciente (/paciente/progreso).

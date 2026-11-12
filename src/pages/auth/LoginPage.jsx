@@ -1,11 +1,23 @@
-import { AuthLayout } from '@/features/auth/components/AuthLayout'
-import { LoginForm } from '@/features/auth/components/LoginForm'
-import { authContent } from '@/features/auth/data/auth-content'
+import { Navigate } from 'react-router-dom'
+import { AuthLayout } from '@/components/auth/AuthLayout'
+import { LoginForm } from '@/components/auth/LoginForm'
+import { authContent } from '@/data/auth-content'
+import { useAuth } from '@/context/AuthContext'
+import { getHomePath } from '@/lib/home-path'
 
-export default function LoginPage() {
+function LoginPage() {
+  const { user, isAuthenticated } = useAuth()
+
+  // Si ya inició sesión, no tiene caso mostrarle el formulario
+  if (isAuthenticated) {
+    return <Navigate to={getHomePath(user)} replace />
+  }
+
   return (
     <AuthLayout {...authContent.login}>
       <LoginForm />
     </AuthLayout>
   )
 }
+
+export default LoginPage

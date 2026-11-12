@@ -1,5 +1,5 @@
-import PacienteChat from '@/features/paciente/components/PacienteChat'
-import { chatPacienteMock } from '@/features/paciente/data/mock-data'
+import PacienteChat from '@/components/paciente/PacienteChat'
+import { chatPacienteMock } from '@/mocks/paciente'
 
 /**
  * Página de Chat del paciente (/paciente/chat).

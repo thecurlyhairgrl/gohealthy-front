@@ -1,11 +1,23 @@
-import { AuthLayout } from '@/features/auth/components/AuthLayout'
-import { SignupForm } from '@/features/auth/components/SignupForm'
-import { authContent } from '@/features/auth/data/auth-content'
+import { Navigate } from 'react-router-dom'
+import { AuthLayout } from '@/components/auth/AuthLayout'
+import { SignupForm } from '@/components/auth/SignupForm'
+import { authContent } from '@/data/auth-content'
+import { useAuth } from '@/context/AuthContext'
+import { getHomePath } from '@/lib/home-path'
 
-export default function SignupPage() {
+function SignupPage() {
+  const { user, isAuthenticated } = useAuth()
+
+  // Si ya inició sesión, no tiene caso mostrarle el formulario
+  if (isAuthenticated) {
+    return <Navigate to={getHomePath(user)} replace />
+  }
+
   return (
     <AuthLayout {...authContent.signup}>
       <SignupForm />
     </AuthLayout>
   )
 }
+
+export default SignupPage

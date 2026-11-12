@@ -1,5 +1,5 @@
-import PacientePlanAlimenticio from '@/features/paciente/components/PacientePlanAlimenticio'
-import { planAlimenticioMock } from '@/features/paciente/data/mock-data'
+import PacientePlanAlimenticio from '@/components/paciente/PacientePlanAlimenticio'
+import { planAlimenticioMock } from '@/mocks/paciente'
 
 /**
  * Página del Plan Alimenticio del paciente (/paciente/plan-alimenticio).
