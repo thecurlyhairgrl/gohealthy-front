@@ -13,7 +13,7 @@ Reemplazar los datos mock por la API real, con una sola forma de autenticar, lla
 
 Hoy, en `develop`:
 
-- Ninguna pantalla usa la API: `apiClient` existe, pero nadie lo importa.
+- Ninguna pantalla usa la API.
 - Todos los datos salen de `features/*/data/mock-data.js`.
 - `LoginForm` navega siempre a `/paciente`, sin validar credenciales.
 - Las rutas `/nutriologo` y `/paciente` no están protegidas.
@@ -22,7 +22,7 @@ Hoy, en `develop`:
 ### Qué NO hace este spec
 
 - No rediseña pantallas ni define su aspecto final.
-- No agrega dependencias: axios, TanStack Query, Zustand, React Hook Form y Zod ya están instalados.
+- No agrega más dependencias que `@hookform/resolvers`. Se usa `fetch`, como en clase.
 - No inventa endpoints. Lo que falta está en la sección 9 y hay que decidirlo con el equipo.
 
 ---
@@ -50,38 +50,16 @@ export const getImageUrl = (path) => (path ? `${API_ORIGIN}${path}` : null)
 
 ### 3.1 Cliente
 
-`src/lib/api-client.js` es el único lugar que agrega el token y reacciona a una sesión vencida:
+`apiFetch` en `src/api/client.js`, como el del proyecto de clase, es el único lugar que agrega el token y reacciona a una sesión vencida. El código está en el paso 1.5 de `docs/frontend/GUIA-FRONT.md`.
 
-```js
-apiClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const isLogin = error.config?.url === '/auth/login'
-    if (error.response?.status === 401 && !isLogin) {
-      useAuthStore.getState().logout()
-      window.location.assign('/auth/login')
-    }
-    return Promise.reject(error)
-  }
-)
-```
-
-**La excepción del login es necesaria:** una contraseña incorrecta también responde `401`, y debe mostrarse como error del formulario. `PUT /auth/change-password` con la contraseña actual incorrecta responde `400`, así que no cierra la sesión.
+**El `401` del login es una excepción:** una contraseña incorrecta también responde `401`, y debe mostrarse como error del formulario, sin cerrar la sesión. `PUT /auth/change-password` con la contraseña actual incorrecta responde `400`, así que tampoco la cierra.
 
 ### 3.2 Estado de sesión
 
-Store de Zustand en `src/stores/auth-store.js`, con `persist` en `localStorage`:
+`AuthContext` en `src/context/AuthContext.jsx`, como en clase. Guarda el token y el usuario en `localStorage`:
 
 ```js
-{ token, user, login(token, user), setUser(user), logout() }
+{ user, isAuthenticated, login, register, refreshUser, saveUser, logout }
 ```
 
 Al recargar la página, si hay token, llamar a `GET /auth/me` para actualizar `user`. La sesión dura 8 horas por defecto.
@@ -101,10 +79,10 @@ Al recargar la página, si hay token, llamar a `GET /auth/me` para actualizar `u
 
 ### 3.4 Protección de rutas
 
-Crear `ProtectedRoute` con el rol permitido y usarlo en `/nutriologo` y `/paciente`:
+Un `ProtectedRoute` como el de clase envuelve las rutas privadas en `App.jsx`:
 
 - Sin sesión: lleva a `/auth/login`.
-- Con otro rol: lleva a la página principal de su rol.
+- Fuera de su área (otro rol, o un paciente que no ha terminado su primer ingreso): lleva a la página que le corresponde según `getHomePath`.
 
 Es solo para la experiencia de uso. La seguridad real está en el back.
 
@@ -158,7 +136,7 @@ Todos los errores traen `message` en español. Los de validación agregan `detai
 Con la estructura de la guía (`docs/frontend/GUIA-FRONT.md`, paso 1.3):
 
 - Una función por endpoint en `src/api/<recurso>.js`.
-- Sus consultas y cambios con TanStack Query en `src/hooks/use<Recurso>.js`.
+- Los datos que comparten varias pantallas, en un contexto de `src/context/`; los de una sola pantalla, en un hook de `src/hooks/` con `useEffect` (paso 1.9).
 - Los formularios con React Hook Form y Zod, con los esquemas en `src/schemas/`.
 - Las páginas siguen siendo delgadas.
 
@@ -177,6 +155,7 @@ Con la estructura de la guía (`docs/frontend/GUIA-FRONT.md`, paso 1.3):
 | `GET /auth/me` | Ambos | — | `user` |
 | `PUT /auth/me` | Ambos | Paciente: `firstName`, `paternalLastName`, `maternalLastName`, `phone`. El nutri además: `professionalLicense`, `specialty`, `university`, `officeAddress`, `bio` | `user` |
 | `POST /auth/me/avatar` | Ambos | `FormData` con el campo `image` | `user` con `avatarUrl` |
+| `GET /auth/me/nutritionist` | Paciente | — | Datos públicos de su nutriólogo: nombre, correo, teléfono, foto, cédula, especialidad, universidad, consultorio y biografía |
 | `PUT /auth/change-password` | Ambos | `currentPassword`, `newPassword` | `{ message }` |
 | `POST /auth/forgot-password` | Público | `email` | `{ message }` |
 | `POST /auth/verify-otp` | Público | `email`, `code` | `{ message }` |
@@ -248,9 +227,10 @@ El **paciente** nunca manda `patientId`: sale del token. El **nutriólogo** mand
 | `GET /dashboard/progress?days=90` | Ambos |
 
 - Una encuesta por día: la segunda responde `409`.
-- El dashboard responde `{ days, measurements, surveys, summary, goals }`, con las series ordenadas por fecha para Recharts:
-  - `summary`: `totalMeasurements`, `totalSurveys`, `weightChangeKg` del periodo.
-  - `goals`: `initialWeightKg` (primera medición de siempre), `currentWeightKg`, `weightGoalKg`, `goalProgressPct` (0 a 100), `currentBodyFatPct` y `bodyFatGoalPct`. Lo que no exista viene en `null`.
+- El dashboard responde `{ days, measurements, weights, surveys, summary, goals }`, con las series ordenadas por fecha para Recharts:
+  - `weights`: el peso de las mediciones del paciente **y** de las consultas, cada registro con `source` (`patient` o `consultation`). Es la serie para la gráfica de peso.
+  - `summary`: `totalMeasurements`, `totalWeights`, `totalSurveys` y `weightChangeKg` del periodo (con `weights`).
+  - `goals`: `initialWeightKg` (primer registro de peso de siempre, de medición o de consulta), `currentWeightKg` (el más reciente), `weightGoalKg`, `goalProgressPct` (0 a 100), `currentBodyFatPct` y `bodyFatGoalPct`. Lo que no exista viene en `null`.
 - **Cumplimiento y cuestionarios usan esta misma encuesta.** *Cumplimiento* muestra cómo sigue el plan (`planAdherence`, más el semáforo de adherencia), y *Cuestionarios* el estado general (ánimo, sueño, agua, actividad). La racha de días se calcula en el front con las fechas de las encuestas.
 
 ### 5.6 Documentos de laboratorio
@@ -265,13 +245,7 @@ El **paciente** nunca manda `patientId`: sale del token. El **nutriólogo** mand
 Se aceptan PDF, JPG y PNG de hasta 10 MB. **La descarga no funciona con un enlace**, porque `<a href>` no manda el token:
 
 ```js
-const { data } = await apiClient.get(`/lab-documents/${doc._id}/file`, { responseType: 'blob' })
-const url = URL.createObjectURL(data)
-const link = document.createElement('a')
-link.href = url
-link.download = doc.originalName
-link.click()
-URL.revokeObjectURL(url)
+await downloadFile(`/lab-documents/${doc._id}/file`, doc.originalName)
 ```
 
 Usar `originalName` de la lista: el servidor no expone el nombre en los headers.
@@ -408,6 +382,8 @@ Los 7 días son opcionales, y un día puede tener solo algunas comidas.
 
 Un paciente sin consultas trae `lastConsultation` y `daysSinceLastConsultation` en `null`.
 
+El peso de `patient-follow-up` (`currentWeightKg`) y de `weight-progress` sale de las mediciones **y** de las consultas, como en `/dashboard/progress`. En `weight-progress`, `totalMeasurements` cuenta todos esos registros.
+
 ---
 
 ## 6. Del mock a la API
@@ -495,7 +471,7 @@ Pestañas por día y tarjetas por comida, con foto, título, ingredientes con po
 
 Cada paso se puede probar por separado:
 
-1. **Base:** `.env`, cliente, store, `ProtectedRoute`.
+1. **Base:** `.env`, cliente, `AuthContext`, `ProtectedRoute`.
 2. **Auth:** login, registro, recuperación, cambio de contraseña, onboarding, cerrar sesión.
 3. **Pacientes:** panel, alta (botón *Nuevo paciente*) y expediente.
 4. **Módulos del paciente:** mediciones, encuestas, progreso, documentos.
@@ -535,7 +511,7 @@ Quedan fuera por ahora:
 ## 10. Criterios de aceptación
 
 - [ ] Ninguna pantalla importa `mock-data.js`.
-- [ ] `apiClient` es el único que agrega el token, y las `features` no usan axios directamente.
+- [ ] `apiFetch` es el único que agrega el token, y las páginas no lo llaman directamente.
 - [ ] Un login incorrecto muestra el error sin recargar la página.
 - [ ] Una sesión vencida lleva al login, en cualquier pantalla.
 - [ ] Cada rol solo entra a sus rutas.

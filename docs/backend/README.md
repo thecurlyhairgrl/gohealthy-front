@@ -91,13 +91,13 @@ La API usa los valores en inglés; el front los traduce solo al mostrarlos.
 
 | Recurso | Ruta base | Quién | Para qué |
 |---|---|---|---|
-| Autenticación | `/auth` | Público y ambos | Registro, login, perfil (`/me`), foto (`/me/avatar`), contraseña, recuperación |
+| Autenticación | `/auth` | Público y ambos | Registro, login, perfil (`/me`), foto (`/me/avatar`), datos del nutriólogo para el paciente (`/me/nutritionist`), contraseña, recuperación |
 | Pacientes | `/patients` | Nutriólogo | Panel, alta, expediente, historia clínica, adherencia, reenviar acceso |
 | Onboarding | `/onboarding` | Paciente | Primer ingreso |
 | Consultas | `/consultations` | Nutriólogo | Notas de evolución |
 | Mediciones | `/measurements` | Ambos | El paciente registra; el nutriólogo consulta |
 | Encuestas | `/wellness-surveys` | Ambos | El paciente contesta una al día; el nutriólogo consulta |
-| Dashboard | `/dashboard/progress` | Ambos | Series para gráficas y metas de peso |
+| Dashboard | `/dashboard/progress` | Ambos | Series para gráficas y metas de peso. `weights` junta el peso de las mediciones y de las consultas, con su origen |
 | Documentos | `/lab-documents` | Ambos | Subir, listar, descargar y borrar |
 | Citas | `/appointments` | Ambos | El nutriólogo agenda y edita; el paciente consulta |
 | Mensajes | `/messages` | Ambos | Bandeja de mensajes y lista de conversaciones |
@@ -120,7 +120,7 @@ El detalle de cada endpoint (método, cuerpo, respuesta y quién puede usarlo) e
 6. **Una encuesta por día:** la segunda del mismo día responde `409`.
 7. **Paciente sin plan:** `GET /meal-plans/active` responde `404` si el paciente no tiene plan. Es un estado vacío, no un error.
 8. **Recetas en el plan:** al asignar una receta, el front copia al plan su `name` (como `title`), su `_id` (como `recipe`), `imageUrl`, sus `ingredients` (como `foods`) y sus `steps`. El paciente no puede consultar `/recipes`: todo lo que ve está en su plan.
-9. **Descarga de documentos:** con axios y `responseType: 'blob'`, nunca con un `<a href>`, porque el enlace no manda el token. El nombre del archivo sale de `originalName`.
+9. **Descarga de documentos:** con `downloadFile` de `src/api/client.js`, nunca con un `<a href>`, porque el enlace no manda el token. El nombre del archivo sale de `originalName`.
 10. **Imágenes:** formato JPG, PNG o WebP, de al menos 600x450 (fotos de perfil: 200x200). El back las recorta a 800x600 (perfil: 400x400) y las convierte a WebP.
 11. **Calorías:** el front las calcula como la suma de los equivalentes por el `energyKcal` del grupo, que viene en `GET /smae/groups`.
 12. **Mensajes:** no hay tiempo real. Se recargan al abrir la conversación y después de enviar.

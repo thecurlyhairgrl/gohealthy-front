@@ -14,48 +14,46 @@ GoHealthy conecta nutriólogos con sus pacientes: seguimiento de alimentación, 
 
 ## Estado del proyecto
 
-El front se está reorganizando con la guía. Hasta terminar la Parte 1, conviven la estructura vieja (`src/app/`, `src/features/`) y la nueva. **Todo el código nuevo va en la estructura nueva**, y lo viejo se mueve a ella con `git mv`.
+El front se está reorganizando con la guía. Ya están conectadas a la API la sesión (Parte 1), las pantallas del nutriólogo (Parte 2), las del paciente (Parte 3) y las recetas, el constructor del plan y los reportes (Parte 4); `src/mocks/` ya no existe. **No agregues datos de prueba.** Antes de crear una utilidad, revisa `src/lib/` (fechas, textos, listas, horarios, pesos, encuestas, SMAE y planes) y los componentes compartidos (`FormField`, `FormSelect`, `DatePicker`, `ConfirmDialog`, y las carpetas `chat/`, `perfil/`, `documentos/` y `progreso/`).
 
 ## Stack
 
-- **React 19 + react-router-dom**: rutas declaradas en `src/router.jsx`, con `ProtectedRoute` por rol.
+- **React 19 + react-router-dom**: como en el proyecto de clase, `BrowserRouter` en `src/main.jsx` y las rutas con `<Routes>`/`<Route>` en `src/App.jsx`. Las privadas van dentro de `<Route element={<ProtectedRoute />}>`, que también manda a cada usuario a su área según `getHomePath` (`src/lib/home-path.js`). Al crear una página, agrega su `<Route>` en `App.jsx` y su enlace en el menú lateral.
 - **Vite**: bundler y servidor de desarrollo.
 - **Tailwind CSS v4**: configuración en `src/index.css` (`@theme`).
 - **shadcn/ui + base-ui**: componentes en `src/components/ui/`, generados con `npx shadcn add <componente>`.
-- **TanStack Query**: todas las peticiones a la API pasan por hooks de `src/hooks/`.
 - **React Hook Form + Zod** (con `@hookform/resolvers`): formularios. Los esquemas van en `src/schemas/`.
-- **axios**: un solo cliente, `src/api/client.js`, que agrega el token y maneja el `401`.
+- **fetch**: con `apiFetch` de `src/api/client.js`, como en el proyecto de clase. Agrega el token y maneja el `401`. No se usan axios ni TanStack Query.
 - **Recharts**: gráficas.
 - **pnpm**: gestor de paquetes. Usar siempre `pnpm`.
 
-La sesión vive en `src/context/AuthContext.jsx`, un contexto sencillo como el del proyecto de clase. **No se usa Zustand.**
+La sesión vive en `src/context/AuthContext.jsx`, un contexto sencillo como el del proyecto de clase. **No se usa Zustand.** Los datos que comparten varias pantallas van en un contexto, como `BooksContext` de clase (`PatientsContext`, `AppointmentsContext`). Los de una sola pantalla, en un hook de `src/hooks/` con `useEffect`.
 
 ## Estructura
 
 ```
 src/
 ├── api/          Una función por endpoint, un archivo por recurso
-├── components/   Compartidos (FormField, ProtectedRoute, ConfirmDialog) y por área:
+├── components/   Compartidos (FormField, DatePicker, ProtectedRoute, ConfirmDialog) y por área:
 │                 landing/, auth/, nutriologo/, paciente/. ui/ es shadcn: no se edita
-├── context/      AuthContext
-├── hooks/        Consultas y cambios de TanStack Query, un archivo por recurso
-├── layouts/      AuthLayout, NutritionistLayout, PatientLayout
-├── lib/          query-client, notify, fechas, textos, imágenes, horarios
+├── context/      AuthContext y los datos que comparten varias pantallas
+├── hooks/        Datos de una sola pantalla, con useEffect
+├── layouts/      NutricionistaLayout, PacienteLayout, PrimerIngresoLayout
+├── lib/          fechas, textos, imágenes, horarios
 ├── pages/        Una página por ruta: landing/, auth/, primer-ingreso/, nutriologo/, paciente/
 ├── schemas/      Esquemas de Zod
 ├── data/         Textos fijos de la landing y de auth
-├── router.jsx
-├── providers.jsx
-└── main.jsx
+├── App.jsx       Rutas (<Routes> y <Route>)
+└── main.jsx      BrowserRouter, AuthProvider y Toaster
 ```
 
-Las páginas son delgadas: arman componentes y usan hooks. No llaman a axios directamente.
+Las páginas arman componentes y usan contextos o hooks. No llaman a `apiFetch` directamente. Todas se exportan con `export default`, como en clase.
 
 ## Reglas
 
-- **Avisos:** nada de `alert()`, `confirm()` ni `prompt()`. Usa `notifySuccess` y `notifyError` de `src/lib/notify.js` (toasts), y `ConfirmDialog` para confirmar.
+- **Avisos:** nada de `alert()`, `confirm()` ni `prompt()`. Usa `toast.add({ title, type })` de `@/components/ui/toast`, y `ConfirmDialog` para confirmar.
 - **Estados:** toda pantalla con datos muestra carga, error y vacío.
-- **Errores de la API:** el mensaje en español sale de `getErrorMessage(error)` (`src/api/client.js`).
+- **Errores de la API:** `apiFetch` lanza un `Error` con el mensaje en español del back en `error.message`, como en clase. Se muestra con un toast dentro de un `try/catch`.
 - **Textos:** todo lo que ve el usuario va en español. Los valores de la API (`scheduled`, `breakfast`…) se traducen con `src/lib/labels.js`.
 - **Fechas:** usa `src/lib/dates.js`. Nunca `new Date().toISOString()` para una fecha sin hora.
 - **Imágenes de la API:** con `getImageUrl()` de `src/lib/image-url.js`.
