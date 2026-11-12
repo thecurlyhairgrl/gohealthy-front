@@ -9,7 +9,7 @@ import ExpedienteHeroCard from '@/components/nutriologo/ExpedienteHeroCard'
 import ExpedienteClinicoTab from '@/components/nutriologo/ExpedienteClinicoTab'
 import ExpedienteConsultasTab from '@/components/nutriologo/ExpedienteConsultasTab'
 import ExpedienteProgresoTab from '@/components/nutriologo/ExpedienteProgresoTab'
-import ExpedienteDocumentosTab from '@/components/nutriologo/ExpedienteDocumentosTab'
+import DocumentosLaboratorio from '@/components/documentos/DocumentosLaboratorio'
 import ExpedientePlanTab from '@/components/nutriologo/ExpedientePlanTab'
 import EditarPacienteModal from '@/components/nutriologo/EditarPacienteModal'
 import AgendarCitaModal from '@/components/nutriologo/AgendarCitaModal'
@@ -20,7 +20,6 @@ import { useConsultations } from '@/hooks/useConsultations'
 import { useProgress } from '@/hooks/useProgress'
 import { resendAccessRequest } from '@/api/patients'
 import { fullName } from '@/lib/labels'
-import { getWeightHistory } from '@/lib/weights'
 
 const TABS = [
   { value: 'clinico', label: 'Historia clínica', icon: HeartPulse },
@@ -57,8 +56,6 @@ function NutricionistaPacienteDetallePage() {
 
   const { patient, clinicalHistory } = detail
   const lastConsultation = consultationsState.consultations[0]
-  // El peso actual es el registro más reciente, sea de una consulta o del paciente
-  const weights = getWeightHistory(consultationsState.consultations, progressState.progress?.measurements || [])
 
   async function handleResendAccess() {
     try {
@@ -79,6 +76,12 @@ function NutricionistaPacienteDetallePage() {
     }
   }
 
+  // La meta de peso también se ve en Progreso
+  function handleClinicalSaved() {
+    reload()
+    progressState.reload()
+  }
+
   // Después de una consulta cambian el historial, el peso y la última consulta
   function handleConsultationSaved() {
     consultationsState.reload()
@@ -90,7 +93,7 @@ function NutricionistaPacienteDetallePage() {
     <div className="space-y-6">
       <ExpedienteHeroCard
         detail={detail}
-        currentWeightKg={weights.at(-1)?.weight}
+        currentWeightKg={progressState.progress?.goals.currentWeightKg}
         lastConsultationDate={lastConsultation?.date}
         onEdit={() => setIsEditOpen(true)}
         onSchedule={() => setIsScheduleOpen(true)}
@@ -109,7 +112,7 @@ function NutricionistaPacienteDetallePage() {
         </TabsList>
 
         <TabsContent value="clinico" className="pt-4">
-          <ExpedienteClinicoTab patientId={id} clinicalHistory={clinicalHistory} onSaved={reload} />
+          <ExpedienteClinicoTab patientId={id} clinicalHistory={clinicalHistory} onSaved={handleClinicalSaved} />
         </TabsContent>
         <TabsContent value="consultas" className="pt-4">
           <ExpedienteConsultasTab
@@ -121,16 +124,10 @@ function NutricionistaPacienteDetallePage() {
           />
         </TabsContent>
         <TabsContent value="progreso" className="pt-4">
-          <ExpedienteProgresoTab
-            progress={progressState.progress}
-            weights={weights}
-            loading={progressState.loading || consultationsState.loading}
-            error={progressState.error}
-            weightGoalKg={clinicalHistory.weightGoalKg}
-          />
+          <ExpedienteProgresoTab progress={progressState.progress} loading={progressState.loading} error={progressState.error} />
         </TabsContent>
         <TabsContent value="documentos" className="pt-4">
-          <ExpedienteDocumentosTab patientId={id} />
+          <DocumentosLaboratorio patientId={id} />
         </TabsContent>
         <TabsContent value="plan" className="pt-4">
           <ExpedientePlanTab patientId={id} />

@@ -15,7 +15,9 @@ import NutricionistaChatPage from '@/pages/nutriologo/NutricionistaChatPage'
 import NutricionistaPerfilPage from '@/pages/nutriologo/NutricionistaPerfilPage'
 import PacientePlanAlimenticioPage from '@/pages/paciente/PacientePlanAlimenticioPage'
 import PacienteCumplimientoPage from '@/pages/paciente/PacienteCumplimientoPage'
-import PacienteCuestionariosPage from '@/pages/paciente/PacienteCuestionariosPage'
+import PacienteCuestionarioPage from '@/pages/paciente/PacienteCuestionarioPage'
+import PacienteDocumentosPage from '@/pages/paciente/PacienteDocumentosPage'
+import PacientePerfilPage from '@/pages/paciente/PacientePerfilPage'
 import PacienteProgresoPage from '@/pages/paciente/PacienteProgresoPage'
 import PacienteChatPage from '@/pages/paciente/PacienteChatPage'
 import NotFoundPage from '@/pages/NotFoundPage'
@@ -51,9 +53,11 @@ function App() {
           <Route index element={<Navigate to="plan-alimenticio" replace />} />
           <Route path="plan-alimenticio" element={<PacientePlanAlimenticioPage />} />
           <Route path="cumplimiento" element={<PacienteCumplimientoPage />} />
-          <Route path="cuestionarios" element={<PacienteCuestionariosPage />} />
+          <Route path="cuestionario" element={<PacienteCuestionarioPage />} />
           <Route path="progreso" element={<PacienteProgresoPage />} />
+          <Route path="documentos" element={<PacienteDocumentosPage />} />
           <Route path="chat" element={<PacienteChatPage />} />
+          <Route path="perfil" element={<PacientePerfilPage />} />
         </Route>
       </Route>
 

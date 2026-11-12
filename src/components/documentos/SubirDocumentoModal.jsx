@@ -46,7 +46,8 @@ function SubirDocumentoForm({ patientId, onUploaded, onClose }) {
     // Los archivos se mandan con FormData
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('patientId', patientId)
+    // Solo el nutriólogo dice de qué paciente es; el paciente lo sube a su propio expediente
+    if (patientId) formData.append('patientId', patientId)
     if (description) formData.append('description', description)
     if (studyDate) formData.append('studyDate', studyDate)
 

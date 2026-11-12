@@ -28,6 +28,7 @@ export function EditarPerfilModal({ isOpen, onClose }) {
 function EditarPerfilForm({ onClose }) {
   const { user, saveUser } = useAuth()
   const [apiError, setApiError] = useState(null)
+  const isNutritionist = user.role === 'nutritionist'
 
   const {
     register,
@@ -50,8 +51,11 @@ function EditarPerfilForm({ onClose }) {
 
   async function onSubmit(formData) {
     setApiError(null)
+    // El paciente solo puede cambiar su nombre y su teléfono
+    const { firstName, paternalLastName, maternalLastName, phone } = formData
+    const data = isNutritionist ? formData : { firstName, paternalLastName, maternalLastName, phone }
     try {
-      const updatedUser = await updateMeRequest(formData)
+      const updatedUser = await updateMeRequest(data)
       saveUser(updatedUser)
       toast.add({ title: 'Perfil actualizado', type: 'success' })
       onClose()
@@ -64,7 +68,9 @@ function EditarPerfilForm({ onClose }) {
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       <DialogHeader>
         <DialogTitle className="font-heading text-xl">Editar perfil</DialogTitle>
-        <DialogDescription>Tus pacientes ven tu nombre, especialidad y biografía.</DialogDescription>
+        <DialogDescription>
+          {isNutritionist ? 'Tus pacientes ven tu nombre, especialidad y biografía.' : 'Tu correo no se puede cambiar.'}
+        </DialogDescription>
       </DialogHeader>
 
       {apiError && <p className="text-sm text-destructive">{apiError}</p>}
@@ -82,23 +88,28 @@ function EditarPerfilForm({ onClose }) {
         <FormField label="Teléfono" htmlFor="phone" error={errors.phone}>
           <Input id="phone" type="tel" {...register('phone')} />
         </FormField>
-        <FormField label="Cédula profesional" htmlFor="professionalLicense" error={errors.professionalLicense}>
-          <Input id="professionalLicense" {...register('professionalLicense')} />
-        </FormField>
-        <FormField label="Especialidad" htmlFor="specialty" error={errors.specialty}>
-          <Input id="specialty" placeholder="Nutrición clínica" {...register('specialty')} />
-        </FormField>
-        <FormField label="Universidad" htmlFor="university" error={errors.university}>
-          <Input id="university" {...register('university')} />
-        </FormField>
-        <FormField label="Consultorio" htmlFor="officeAddress" error={errors.officeAddress}>
-          <Input id="officeAddress" {...register('officeAddress')} />
-        </FormField>
-        <div className="sm:col-span-2">
-          <FormField label="Biografía" htmlFor="bio" error={errors.bio}>
-            <Textarea id="bio" rows={4} {...register('bio')} />
-          </FormField>
-        </div>
+        {/* Solo el nutriólogo tiene datos profesionales */}
+        {isNutritionist && (
+          <>
+            <FormField label="Cédula profesional" htmlFor="professionalLicense" error={errors.professionalLicense}>
+              <Input id="professionalLicense" {...register('professionalLicense')} />
+            </FormField>
+            <FormField label="Especialidad" htmlFor="specialty" error={errors.specialty}>
+              <Input id="specialty" placeholder="Nutrición clínica" {...register('specialty')} />
+            </FormField>
+            <FormField label="Universidad" htmlFor="university" error={errors.university}>
+              <Input id="university" {...register('university')} />
+            </FormField>
+            <FormField label="Consultorio" htmlFor="officeAddress" error={errors.officeAddress}>
+              <Input id="officeAddress" {...register('officeAddress')} />
+            </FormField>
+            <div className="sm:col-span-2">
+              <FormField label="Biografía" htmlFor="bio" error={errors.bio}>
+                <Textarea id="bio" rows={4} {...register('bio')} />
+              </FormField>
+            </div>
+          </>
+        )}
       </FieldGroup>
 
       <DialogFooter>

@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { PerfilHeroCard } from '@/components/nutriologo/PerfilHeroCard'
-import { PerfilDatosPersonalesCard } from '@/components/nutriologo/PerfilDatosPersonalesCard'
+import { PerfilHeroCard } from '@/components/perfil/PerfilHeroCard'
+import { PerfilDatosPersonalesCard } from '@/components/perfil/PerfilDatosPersonalesCard'
 import { PerfilProfesionalCard } from '@/components/nutriologo/PerfilProfesionalCard'
-import { PerfilSeguridadCard } from '@/components/nutriologo/PerfilSeguridadCard'
-import { EditarPerfilModal } from '@/components/nutriologo/EditarPerfilModal'
-import { CambiarPasswordModal } from '@/components/nutriologo/CambiarPasswordModal'
+import { PerfilSeguridadCard } from '@/components/perfil/PerfilSeguridadCard'
+import { EditarPerfilModal } from '@/components/perfil/EditarPerfilModal'
+import { CambiarPasswordModal } from '@/components/perfil/CambiarPasswordModal'
 import { useAuth } from '@/context/AuthContext'
 
 /**

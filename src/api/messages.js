@@ -5,9 +5,9 @@ export function getConversationsRequest() {
   return apiFetch('/messages/conversations')
 }
 
-// Del más viejo al más nuevo
+// Del más viejo al más nuevo. El paciente no manda patientId: solo tiene una conversación
 export function getMessagesRequest(patientId) {
-  return apiFetch(`/messages?patientId=${patientId}`)
+  return apiFetch(patientId ? `/messages?patientId=${patientId}` : '/messages')
 }
 
 export function sendMessageRequest(messageData) {
@@ -15,7 +15,7 @@ export function sendMessageRequest(messageData) {
 }
 
 export function markAsReadRequest(patientId) {
-  return apiFetch(`/messages/read?patientId=${patientId}`, { method: 'PUT' })
+  return apiFetch(patientId ? `/messages/read?patientId=${patientId}` : '/messages/read', { method: 'PUT' })
 }
 
 // { unread }

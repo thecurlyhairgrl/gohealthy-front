@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Award, FileText, GraduationCap, MapPin, Stethoscope } from 'lucide-react'
-import { PerfilDato } from '@/components/nutriologo/PerfilDatosPersonalesCard'
+import { PerfilDato } from '@/components/perfil/PerfilDatosPersonalesCard'
 
 /**
  * Datos profesionales, consultorio y biografía del nutriólogo.

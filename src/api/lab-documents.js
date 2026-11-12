@@ -1,7 +1,8 @@
 import { apiFetch } from './client'
 
+// El paciente no manda patientId: ve los suyos
 export function getLabDocumentsRequest(patientId) {
-  return apiFetch(`/lab-documents?patientId=${patientId}`)
+  return apiFetch(patientId ? `/lab-documents?patientId=${patientId}` : '/lab-documents')
 }
 
 // formData lleva file, patientId y, si hay, description y studyDate

@@ -3,16 +3,19 @@ import { ArrowLeft, Clock, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Spinner } from '@/components/ui/spinner'
-import { ChatInputMensaje } from '@/components/nutriologo/ChatInputMensaje'
+import { ChatInputMensaje } from '@/components/chat/ChatInputMensaje'
 import { fullName, initials } from '@/lib/labels'
 import { formatDate, formatTime } from '@/lib/dates'
 import { getImageUrl } from '@/lib/image-url'
 
 /**
- * Conversación con un paciente. Funciona como bandeja de correo:
+ * Conversación entre el paciente y su nutriólogo. Funciona como bandeja de correo:
  * los mensajes nuevos aparecen al abrirla, al enviar o con el botón de actualizar.
+ * - contacto: la otra persona (se muestra en la cabecera)
+ * - myRole: el rol de quien la ve, para saber qué mensajes son suyos
+ * - onVolverALista: opcional; en celular regresa a la lista de conversaciones
  */
-export function ChatVentanaConversacion({ paciente, mensajes, loading, error, onActualizar, onVolverALista, onEnviarMensaje }) {
+export function ChatVentanaConversacion({ contacto, myRole, mensajes, loading, error, onActualizar, onVolverALista, onEnviarMensaje }) {
   const scrollRef = useRef(null)
 
   // Baja al último mensaje cada vez que cambian
@@ -26,14 +29,16 @@ export function ChatVentanaConversacion({ paciente, mensajes, loading, error, on
     <div className="flex h-full flex-col bg-background/50">
       <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-card p-3.5 sm:p-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon-xs" onClick={onVolverALista} className="md:hidden" aria-label="Volver a la lista">
-            <ArrowLeft className="size-4" />
-          </Button>
+          {onVolverALista && (
+            <Button variant="ghost" size="icon-xs" onClick={onVolverALista} className="md:hidden" aria-label="Volver a la lista">
+              <ArrowLeft className="size-4" />
+            </Button>
+          )}
           <Avatar className="size-10">
-            <AvatarImage src={getImageUrl(paciente.avatarUrl)} alt="" />
-            <AvatarFallback className="bg-primary/20 text-xs text-primary">{initials(paciente)}</AvatarFallback>
+            <AvatarImage src={getImageUrl(contacto.avatarUrl)} alt="" />
+            <AvatarFallback className="bg-primary/20 text-xs text-primary">{initials(contacto)}</AvatarFallback>
           </Avatar>
-          <h3 className="text-sm font-semibold">{fullName(paciente)}</h3>
+          <h3 className="text-sm font-semibold">{fullName(contacto)}</h3>
         </div>
         <Button variant="ghost" size="icon-sm" onClick={onActualizar} aria-label="Actualizar mensajes">
           <RefreshCw />
@@ -54,7 +59,7 @@ export function ChatVentanaConversacion({ paciente, mensajes, loading, error, on
           </div>
         ) : (
           mensajes.map((mensaje) => {
-            const esMio = mensaje.sender.role === 'nutritionist'
+            const esMio = mensaje.sender.role === myRole
             return (
               <div key={mensaje._id} className={`flex flex-col ${esMio ? 'items-end' : 'items-start'}`}>
                 <div
@@ -79,7 +84,7 @@ export function ChatVentanaConversacion({ paciente, mensajes, loading, error, on
         )}
       </div>
 
-      <ChatInputMensaje pacienteNombre={paciente.firstName} onEnviarMensaje={onEnviarMensaje} />
+      <ChatInputMensaje nombre={contacto.firstName} onEnviarMensaje={onEnviarMensaje} />
     </div>
   )
 }

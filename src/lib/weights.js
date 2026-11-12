@@ -1,21 +1,20 @@
 import { formatDate, formatDateOnly } from './dates'
 
-// Historial de peso del paciente, del más viejo al más nuevo.
-// Junta las consultas (las registra el nutriólogo) y las mediciones (las registra el paciente)
-export const getWeightHistory = (consultations, measurements) => {
-  return [
-    ...consultations
-      .filter((consultation) => consultation.measurements?.weightKg)
-      .map((consultation) => ({
-        date: new Date(consultation.date),
-        label: formatDate(consultation.date),
-        weight: consultation.measurements.weightKg,
-      })),
-    // Las mediciones son fechas sin hora (UTC)
-    ...measurements.map((measurement) => ({
-      date: new Date(measurement.date),
-      label: formatDateOnly(measurement.date),
-      weight: measurement.weightKg,
-    })),
-  ].sort((a, b) => a.date - b.date)
+export const WEIGHT_SOURCE = {
+  patient: { label: 'Registro del paciente', color: '#ABB748' },
+  consultation: { label: 'En consulta', color: '#2F6B4E' },
+}
+
+// Los registros de peso que regresa el back (progress.weights) listos para la gráfica.
+// Las mediciones del paciente son fechas sin hora (UTC); las consultas tienen hora
+export const toWeightPoints = (weights = []) => {
+  return weights.map((record, index) => {
+    const previous = weights[index - 1]
+    return {
+      ...record,
+      label: record.source === 'patient' ? formatDateOnly(record.date) : formatDate(record.date),
+      // Diferencia contra el registro anterior, sin importar de dónde venga
+      change: previous ? Math.round((record.weightKg - previous.weightKg) * 10) / 10 : null,
+    }
+  })
 }

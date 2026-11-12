@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from '@/components/ui/toast'
 import { ChatListaConversaciones } from '@/components/nutriologo/ChatListaConversaciones'
-import { ChatVentanaConversacion } from '@/components/nutriologo/ChatVentanaConversacion'
+import { ChatVentanaConversacion } from '@/components/chat/ChatVentanaConversacion'
 import { ChatEstadoVacio } from '@/components/nutriologo/ChatEstadoVacio'
 import { useConversations } from '@/hooks/useConversations'
 import { useMessages } from '@/hooks/useMessages'
@@ -49,7 +49,8 @@ function NutricionistaChatPage() {
       <div className={`h-full flex-1 overflow-hidden ${pacienteActivoId ? 'block' : 'hidden md:block'}`}>
         {conversacionActiva ? (
           <ChatVentanaConversacion
-            paciente={conversacionActiva.patient}
+            contacto={conversacionActiva.patient}
+            myRole="nutritionist"
             mensajes={messages}
             loading={loading}
             error={error}

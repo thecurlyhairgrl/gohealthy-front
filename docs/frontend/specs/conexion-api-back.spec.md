@@ -155,6 +155,7 @@ Con la estructura de la guía (`docs/frontend/GUIA-FRONT.md`, paso 1.3):
 | `GET /auth/me` | Ambos | — | `user` |
 | `PUT /auth/me` | Ambos | Paciente: `firstName`, `paternalLastName`, `maternalLastName`, `phone`. El nutri además: `professionalLicense`, `specialty`, `university`, `officeAddress`, `bio` | `user` |
 | `POST /auth/me/avatar` | Ambos | `FormData` con el campo `image` | `user` con `avatarUrl` |
+| `GET /auth/me/nutritionist` | Paciente | — | Datos públicos de su nutriólogo: nombre, correo, teléfono, foto, cédula, especialidad, universidad, consultorio y biografía |
 | `PUT /auth/change-password` | Ambos | `currentPassword`, `newPassword` | `{ message }` |
 | `POST /auth/forgot-password` | Público | `email` | `{ message }` |
 | `POST /auth/verify-otp` | Público | `email`, `code` | `{ message }` |
@@ -226,9 +227,10 @@ El **paciente** nunca manda `patientId`: sale del token. El **nutriólogo** mand
 | `GET /dashboard/progress?days=90` | Ambos |
 
 - Una encuesta por día: la segunda responde `409`.
-- El dashboard responde `{ days, measurements, surveys, summary, goals }`, con las series ordenadas por fecha para Recharts:
-  - `summary`: `totalMeasurements`, `totalSurveys`, `weightChangeKg` del periodo.
-  - `goals`: `initialWeightKg` (primera medición de siempre), `currentWeightKg`, `weightGoalKg`, `goalProgressPct` (0 a 100), `currentBodyFatPct` y `bodyFatGoalPct`. Lo que no exista viene en `null`.
+- El dashboard responde `{ days, measurements, weights, surveys, summary, goals }`, con las series ordenadas por fecha para Recharts:
+  - `weights`: el peso de las mediciones del paciente **y** de las consultas, cada registro con `source` (`patient` o `consultation`). Es la serie para la gráfica de peso.
+  - `summary`: `totalMeasurements`, `totalWeights`, `totalSurveys` y `weightChangeKg` del periodo (con `weights`).
+  - `goals`: `initialWeightKg` (primer registro de peso de siempre, de medición o de consulta), `currentWeightKg` (el más reciente), `weightGoalKg`, `goalProgressPct` (0 a 100), `currentBodyFatPct` y `bodyFatGoalPct`. Lo que no exista viene en `null`.
 - **Cumplimiento y cuestionarios usan esta misma encuesta.** *Cumplimiento* muestra cómo sigue el plan (`planAdherence`, más el semáforo de adherencia), y *Cuestionarios* el estado general (ánimo, sueño, agua, actividad). La racha de días se calcula en el front con las fechas de las encuestas.
 
 ### 5.6 Documentos de laboratorio

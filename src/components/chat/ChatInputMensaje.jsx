@@ -6,7 +6,7 @@ import { Send } from 'lucide-react'
 /**
  * Barra de entrada inferior para redactar y enviar mensajes en el chat.
  */
-export function ChatInputMensaje({ onEnviarMensaje, pacienteNombre }) {
+export function ChatInputMensaje({ onEnviarMensaje, nombre }) {
   const [texto, setTexto] = useState('')
   const [enviando, setEnviando] = useState(false)
 
@@ -27,7 +27,7 @@ export function ChatInputMensaje({ onEnviarMensaje, pacienteNombre }) {
     >
       <Input
         type="text"
-        placeholder={`Escribe un mensaje para ${pacienteNombre || 'el paciente'}...`}
+        placeholder={`Escribe un mensaje para ${nombre}...`}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
         className="flex-1 text-xs sm:text-sm h-10 bg-background"
