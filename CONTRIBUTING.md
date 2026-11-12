@@ -90,8 +90,6 @@ Cuando `develop` acumule funcionalidad lista para publicarse, se abre un PR de `
 
 ## Checklist
 - [ ] `pnpm lint` pasa sin errores.
-- [ ] `pnpm build` pasa sin errores.
-- [ ] Probé la funcionalidad corriendo la app (local o con Podman).
 - [ ] No dejé `console.log`, código comentado ni TODOs sin explicar.
 - [ ] Actualicé documentación relevante en `docs/` si el cambio lo amerita.
 
@@ -122,7 +120,7 @@ Ejemplos: `feat: agregar login de nutriólogo`, `fix: corregir overflow en tabla
 
 ## 6. Cómo correr el proyecto
 
-### Opción A — Local con pnpm (recomendado para el día a día, más rápido)
+### Local con pnpm (recomendado para el día a día, más rápido)
 
 1. Usando Node (ver [.nvmrc](./.nvmrc); con `nvm` alcanza con `nvm use`).
 2. Instalar pnpm en la versión fijada en `package.json` (`packageManager`): `corepack enable` (ya viene con Node 20) resuelve esto automáticamente.
@@ -135,32 +133,6 @@ Ejemplos: `feat: agregar login de nutriólogo`, `fix: corregir overflow en tabla
    pnpm dev
    ```
    Abre `http://localhost:5173`.
-
-### Opción B — Con Podman
-
-Útil para verificar que tu cambio funciona igual para todos, sin depender de la versión de Node instalada en tu máquina.
-
-```bash
-pnpm podman:up    # equivalente a: podman compose up --build
-```
-
-Abre `http://localhost:5173`. Los cambios en el código se reflejan en caliente (hot reload) igual que en local, gracias al bind mount configurado en `compose.yaml`.
-
-Para apagarlo:
-```bash
-pnpm podman:down
-```
-
-### Problemas conocidos (ya resueltos, por si vuelven a aparecer)
-
-- **`ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` al instalar dependencias:** pnpm 10 bloquea por defecto paquetes publicados hace menos de 24h (protección contra ataques de supply-chain). Ya está desactivado a nivel de proyecto en [.npmrc](./.npmrc). Si ves este error, corre `pnpm install` de nuevo — no debería volver a pasar salvo que se borre ese archivo.
-- **El contenedor de Podman no mostraba `Network:` / no era accesible desde el navegador:** faltaba `host: true` en `vite.config.js`. Ya está corregido.
-- **El contenedor se caía con un error `EIO: i/o error, stat '/app'` o dejaba de refrescar cambios:** es un problema conocido de los bind mounts de Podman sobre Windows/WSL2 con el watcher nativo de archivos. Se mitigó forzando polling en `vite.config.js` (`server.watch.usePolling`). Si vuelve a pasar, `podman compose restart` (ya configuramos `restart: unless-stopped` para que se recupere solo).
-- **`podman compose up` corre bien, `podman logs` muestra "VITE ready" y aun así `http://localhost:5173` da "conexión rechazada":** es un bug de red de WSL2 en Windows (el relay de puertos hacia `localhost` se queda atascado), no algo del proyecto. Se puede confirmar entrando al contenedor: `podman exec <container> wget -qO- http://localhost:5173/` — si eso responde HTML, el problema es 100% del host, no de la app. Orden de intentos para arreglarlo:
-  1. `podman machine stop` y luego `podman machine start`.
-  2. Si sigue sin funcionar: `wsl --shutdown` (apaga **todas** tus distros WSL, guarda tu trabajo en otras antes) y luego `podman machine start` de nuevo.
-  3. Si ninguno de los dos funciona: reiniciar Windows. Esto lo resuelve siempre.
-
 ---
 
 ## 7. Variables de entorno
