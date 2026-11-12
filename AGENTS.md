@@ -14,7 +14,7 @@ GoHealthy conecta nutriólogos con sus pacientes: seguimiento de alimentación, 
 
 ## Estado del proyecto
 
-El front se está reorganizando con la guía. Ya están conectadas a la API la sesión (Parte 1) y las pantallas del nutriólogo (Parte 2). Las del paciente todavía usan los datos de prueba de `src/mocks/paciente.js`. **No agregues datos de prueba nuevos.** Antes de crear una utilidad, revisa `src/lib/` (fechas, textos, listas, horarios, pesos) y los componentes compartidos (`FormField`, `FormSelect`, `DatePicker`, `ConfirmDialog`).
+El front se está reorganizando con la guía. Ya están conectadas a la API la sesión (Parte 1), las pantallas del nutriólogo (Parte 2) y las del paciente (Parte 3); `src/mocks/` ya no existe. **No agregues datos de prueba.** Antes de crear una utilidad, revisa `src/lib/` (fechas, textos, listas, horarios, pesos, encuestas) y los componentes compartidos (`FormField`, `FormSelect`, `DatePicker`, `ConfirmDialog`, y las carpetas `chat/`, `perfil/`, `documentos/` y `progreso/`).
 
 ## Stack
 
@@ -40,7 +40,6 @@ src/
 ├── hooks/        Datos de una sola pantalla, con useEffect
 ├── layouts/      NutricionistaLayout, PacienteLayout, PrimerIngresoLayout
 ├── lib/          fechas, textos, imágenes, horarios
-├── mocks/        Datos de prueba mientras se conecta la API (se borran al final)
 ├── pages/        Una página por ruta: landing/, auth/, primer-ingreso/, nutriologo/, paciente/
 ├── schemas/      Esquemas de Zod
 ├── data/         Textos fijos de la landing y de auth

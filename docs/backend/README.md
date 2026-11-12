@@ -91,13 +91,13 @@ La API usa los valores en inglés; el front los traduce solo al mostrarlos.
 
 | Recurso | Ruta base | Quién | Para qué |
 |---|---|---|---|
-| Autenticación | `/auth` | Público y ambos | Registro, login, perfil (`/me`), foto (`/me/avatar`), contraseña, recuperación |
+| Autenticación | `/auth` | Público y ambos | Registro, login, perfil (`/me`), foto (`/me/avatar`), datos del nutriólogo para el paciente (`/me/nutritionist`), contraseña, recuperación |
 | Pacientes | `/patients` | Nutriólogo | Panel, alta, expediente, historia clínica, adherencia, reenviar acceso |
 | Onboarding | `/onboarding` | Paciente | Primer ingreso |
 | Consultas | `/consultations` | Nutriólogo | Notas de evolución |
 | Mediciones | `/measurements` | Ambos | El paciente registra; el nutriólogo consulta |
 | Encuestas | `/wellness-surveys` | Ambos | El paciente contesta una al día; el nutriólogo consulta |
-| Dashboard | `/dashboard/progress` | Ambos | Series para gráficas y metas de peso |
+| Dashboard | `/dashboard/progress` | Ambos | Series para gráficas y metas de peso. `weights` junta el peso de las mediciones y de las consultas, con su origen |
 | Documentos | `/lab-documents` | Ambos | Subir, listar, descargar y borrar |
 | Citas | `/appointments` | Ambos | El nutriólogo agenda y edita; el paciente consulta |
 | Mensajes | `/messages` | Ambos | Bandeja de mensajes y lista de conversaciones |

@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import { getMessagesRequest, markAsReadRequest } from '@/api/messages'
 
-// Mensajes con un paciente. Al abrir la conversación se marcan como leídos
-export function useMessages(patientId) {
+// Mensajes de una conversación. Al abrirla se marcan como leídos.
+// El nutriólogo manda el patientId; el paciente llama useMessages(null, true)
+export function useMessages(patientId, enabled = Boolean(patientId)) {
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [version, setVersion] = useState(0)
 
   useEffect(() => {
-    if (!patientId) return
+    if (!enabled) return
 
     async function load() {
       setLoading(true)
@@ -27,7 +28,7 @@ export function useMessages(patientId) {
     }
 
     load()
-  }, [patientId, version])
+  }, [patientId, enabled, version])
 
   const reload = () => setVersion((current) => current + 1)
 

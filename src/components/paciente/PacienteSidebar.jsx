@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   Sidebar,
@@ -8,6 +9,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
@@ -18,40 +20,25 @@ import {
   FileQuestion,
   TrendingUp,
   MessageSquare,
+  FileText,
+  User,
   LogOut,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { getUnreadCountRequest } from '@/api/messages'
 import logoGoHealthy from '@/assets/GoHealthyLogo.png'
 
 // Links de navegación del sidebar del paciente.
 const navItems = [
-  {
-    label: 'Plan Alimenticio',
-    href: '/paciente/plan-alimenticio',
-    icon: Utensils,
-  },
-  {
-    label: 'Cumplimiento de Actividades',
-    href: '/paciente/cumplimiento',
-    icon: ClipboardCheck,
-  },
-  {
-    label: 'Cuestionarios',
-    href: '/paciente/cuestionarios',
-    icon: FileQuestion,
-  },
-  {
-    label: 'Progreso',
-    href: '/paciente/progreso',
-    icon: TrendingUp,
-  },
-  {
-    label: 'Chat',
-    href: '/paciente/chat',
-    icon: MessageSquare,
-  },
+  { label: 'Plan alimenticio', href: '/paciente/plan-alimenticio', icon: Utensils },
+  { label: 'Cuestionario del día', href: '/paciente/cuestionario', icon: FileQuestion },
+  { label: 'Cumplimiento', href: '/paciente/cumplimiento', icon: ClipboardCheck },
+  { label: 'Progreso', href: '/paciente/progreso', icon: TrendingUp },
+  { label: 'Documentos', href: '/paciente/documentos', icon: FileText },
+  { label: 'Mensajes', href: '/paciente/chat', icon: MessageSquare },
+  { label: 'Mi perfil', href: '/paciente/perfil', icon: User },
 ]
 
 /**
@@ -64,6 +51,20 @@ function PacienteSidebar() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const [unread, setUnread] = useState(0)
+
+  // Mensajes sin leer: se vuelven a contar al cambiar de página y al leer la conversación
+  useEffect(() => {
+    function loadUnread() {
+      getUnreadCountRequest()
+        .then((data) => setUnread(data.unread))
+        .catch(() => setUnread(0))
+    }
+
+    loadUnread()
+    window.addEventListener('messages-read', loadUnread)
+    return () => window.removeEventListener('messages-read', loadUnread)
+  }, [location.pathname])
 
   // Borra la sesión y regresa al login
   function handleLogout() {
@@ -131,6 +132,7 @@ function PacienteSidebar() {
                       <item.icon />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
+                    {item.href === '/paciente/chat' && unread > 0 && <SidebarMenuBadge>{unread}</SidebarMenuBadge>}
                   </SidebarMenuItem>
                 )
               })}

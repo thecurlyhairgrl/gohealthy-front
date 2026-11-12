@@ -11,7 +11,8 @@ import { fullName, initials } from '@/lib/labels'
 import { getImageUrl } from '@/lib/image-url'
 
 /**
- * Cabecera del perfil: foto (se puede cambiar), nombre, especialidad y cédula.
+ * Cabecera del perfil: foto (se puede cambiar) y nombre.
+ * Al nutriólogo también le muestra su especialidad y su cédula.
  */
 export function PerfilHeroCard({ onEditarPerfil }) {
   const { user, saveUser } = useAuth()
@@ -60,8 +61,10 @@ export function PerfilHeroCard({ onEditarPerfil }) {
 
             <div className="space-y-1.5">
               <h1 className="font-heading text-xl font-bold tracking-tight sm:text-2xl">{fullName(user)}</h1>
-              <p className="text-sm font-medium text-muted-foreground">{user.specialty || 'Nutriólogo(a)'}</p>
-              {user.professionalLicense && (
+              <p className="text-sm font-medium text-muted-foreground">
+                {user.role === 'nutritionist' ? user.specialty || 'Nutriólogo(a)' : user.email}
+              </p>
+              {user.role === 'nutritionist' && user.professionalLicense && (
                 <p className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground">
                   <ShieldCheck className="size-3.5 text-primary" />
                   Céd. Prof. {user.professionalLicense}

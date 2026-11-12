@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { toast } from '@/components/ui/toast'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import SubirDocumentoModal from '@/components/nutriologo/SubirDocumentoModal'
+import SubirDocumentoModal from '@/components/documentos/SubirDocumentoModal'
 import { useAuth } from '@/context/AuthContext'
 import { useLabDocuments } from '@/hooks/useLabDocuments'
 import { deleteLabDocumentRequest } from '@/api/lab-documents'
@@ -19,8 +19,9 @@ const formatSize = (bytes) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).t
 /**
  * Documentos de laboratorio del paciente: los sube él o el nutriólogo.
  * Solo quien subió un documento lo puede borrar.
+ * El nutriólogo manda patientId; el paciente no, porque sale de su sesión.
  */
-export default function ExpedienteDocumentosTab({ patientId }) {
+export default function DocumentosLaboratorio({ patientId }) {
   const { user } = useAuth()
   const { documents, loading, error, reload } = useLabDocuments(patientId)
   const [isUploadOpen, setIsUploadOpen] = useState(false)
@@ -72,7 +73,9 @@ export default function ExpedienteDocumentosTab({ patientId }) {
               <FileText />
             </EmptyMedia>
             <EmptyTitle>No hay documentos</EmptyTitle>
-            <EmptyDescription>Aquí aparecen los estudios que suban tú o el paciente.</EmptyDescription>
+            <EmptyDescription>
+              {user.role === 'nutritionist' ? 'Aquí aparecen los estudios que suban tú o el paciente.' : 'Aquí aparecen los estudios que suban tú o tu nutriólogo.'}
+            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
@@ -90,7 +93,7 @@ export default function ExpedienteDocumentosTab({ patientId }) {
                       <p className="truncate text-sm font-semibold">{document.originalName}</p>
                       {document.description && <p className="truncate text-xs">{document.description}</p>}
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {isMine ? 'Lo subiste tú' : 'Lo subió el paciente'} el {formatDate(document.createdAt)}
+                        {isMine ? 'Lo subiste tú' : user.role === 'nutritionist' ? 'Lo subió el paciente' : 'Lo subió tu nutriólogo'} el {formatDate(document.createdAt)}
                         {document.studyDate && ` · Estudio del ${formatDateOnly(document.studyDate)}`} · {formatSize(document.sizeBytes)}
                       </p>
                     </div>

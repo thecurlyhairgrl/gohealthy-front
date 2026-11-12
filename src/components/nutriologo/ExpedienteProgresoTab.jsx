@@ -1,9 +1,12 @@
 import { Activity, Scale, Target, TrendingDown, TrendingUp } from 'lucide-react'
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import { GraficaPeso } from '@/components/progreso/GraficaPeso'
+import { HistorialPeso } from '@/components/progreso/HistorialPeso'
 import { formatDateOnly } from '@/lib/dates'
+import { toWeightPoints } from '@/lib/weights'
 
 // Tarjeta con un dato del progreso
 function StatCard({ label, value, unit, icon: Icon, children }) {
@@ -24,36 +27,24 @@ function StatCard({ label, value, unit, icon: Icon, children }) {
 }
 
 /**
- * Progreso del paciente: peso de las consultas y de sus registros, contra la meta,
+ * Progreso del paciente: peso (de sus registros y de las consultas) contra la meta,
  * y el cumplimiento del plan que contesta en el cuestionario diario.
  */
-export default function ExpedienteProgresoTab({ progress, weights, loading, error, weightGoalKg }) {
-
+export default function ExpedienteProgresoTab({ progress, loading, error }) {
   if (loading) return <Skeleton className="h-80 w-full" />
   if (error) return <p className="text-sm text-destructive">{error}</p>
 
-  const initialWeight = weights[0]?.weight ?? null
-  const currentWeight = weights.at(-1)?.weight ?? null
-  const change = initialWeight && currentWeight ? Math.round((currentWeight - initialWeight) * 10) / 10 : null
-
-  // Avance hacia la meta: cuánto del camino entre el peso inicial y la meta ya recorrió
-  let goalProgress = null
-  if (initialWeight && currentWeight && weightGoalKg && initialWeight !== weightGoalKg) {
-    const percent = ((initialWeight - currentWeight) / (initialWeight - weightGoalKg)) * 100
-    goalProgress = Math.max(0, Math.min(100, Math.round(percent)))
-  }
-
+  // El back ya junta el peso de las consultas y de las mediciones del paciente
+  const points = toWeightPoints(progress.weights)
+  const { initialWeightKg, currentWeightKg, weightGoalKg, goalProgressPct } = progress.goals
+  const change = initialWeightKg && currentWeightKg ? Math.round((currentWeightKg - initialWeightKg) * 10) / 10 : null
   const adherenceData = progress.surveys.map((survey) => ({ label: formatDateOnly(survey.date), adherence: survey.planAdherence }))
-
-  const allWeights = weights.map((item) => item.weight).concat(weightGoalKg ? [weightGoalKg] : [])
-  const minY = Math.floor(Math.min(...allWeights) - 2)
-  const maxY = Math.ceil(Math.max(...allWeights) + 2)
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Peso inicial" value={initialWeight} unit="kg" icon={Scale} />
-        <StatCard label="Peso actual" value={currentWeight} unit="kg" icon={change !== null && change > 0 ? TrendingUp : TrendingDown}>
+        <StatCard label="Peso inicial" value={initialWeightKg} unit="kg" icon={Scale} />
+        <StatCard label="Peso actual" value={currentWeightKg} unit="kg" icon={change !== null && change > 0 ? TrendingUp : TrendingDown}>
           {change !== null && (
             <p className="mt-1 text-xs text-muted-foreground">
               {change > 0 ? '+' : ''}
@@ -64,39 +55,28 @@ export default function ExpedienteProgresoTab({ progress, weights, loading, erro
         <StatCard label="Meta" value={weightGoalKg} unit="kg" icon={Target}>
           {!weightGoalKg && <p className="mt-1 text-xs text-muted-foreground">Defínela en la historia clínica</p>}
         </StatCard>
-        <StatCard label="Avance" value={goalProgress} unit="%" icon={Activity}>
-          {goalProgress !== null && <Progress value={goalProgress} className="mt-2" />}
+        <StatCard label="Avance" value={goalProgressPct} unit="%" icon={Activity}>
+          {goalProgressPct !== null && <Progress value={goalProgressPct} className="mt-2" />}
         </StatCard>
       </div>
 
       <Card className="border-border/60">
         <CardHeader>
           <CardTitle className="text-base">Evolución del peso</CardTitle>
-          <CardDescription>Consultas y registros del paciente{weightGoalKg ? `, contra la meta de ${weightGoalKg} kg` : ''}</CardDescription>
+          <CardDescription>Lo que registra el paciente y lo que se anota en consulta</CardDescription>
         </CardHeader>
         <CardContent>
-          {weights.length < 2 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">Se necesitan al menos dos registros de peso para la gráfica.</p>
-          ) : (
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weights} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorPeso" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2F6B4E" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#2F6B4E" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border/50" />
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
-                  <YAxis domain={[minY, maxY]} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} unit="kg" />
-                  <Tooltip formatter={(value) => [`${value} kg`, 'Peso']} />
-                  {weightGoalKg && <ReferenceLine y={weightGoalKg} stroke="#ABB748" strokeDasharray="4 4" strokeWidth={2} />}
-                  <Area type="monotone" dataKey="weight" stroke="#2F6B4E" strokeWidth={2.5} fill="url(#colorPeso)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          <GraficaPeso points={points} weightGoalKg={weightGoalKg} />
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/60">
+        <CardHeader>
+          <CardTitle className="text-base">Historial de peso</CardTitle>
+          <CardDescription>Cada registro con su origen y la diferencia contra el anterior</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <HistorialPeso points={points} />
         </CardContent>
       </Card>
 

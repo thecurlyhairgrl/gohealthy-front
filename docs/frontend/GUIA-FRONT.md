@@ -5,10 +5,10 @@ Esta guía reorganiza el front y lo conecta con la API. Está repartida por pers
 - [x] El proyecto limpio: sin Podman y con una estructura de carpetas como la de clase
 - [x] La sesión real: login, registro, recuperación de contraseña y primer ingreso del paciente
 - [x] Las pantallas del nutriólogo conectadas a la API, con las correcciones del profesor
-- [ ] Las pantallas del paciente conectadas a la API, con el plan alimenticio como receta
+- [x] Las pantallas del paciente conectadas a la API, con el plan alimenticio como receta
 - [ ] La biblioteca de recetas, el constructor del plan y los reportes
 - [ ] Ningún `alert()` ni `confirm()` del navegador: todo con toasts y diálogos de shadcn
-- [ ] Ningún dato de prueba (`src/mocks/`)
+- [x] Ningún dato de prueba (`src/mocks/`)
 
 **El back manda.** Cuando una pantalla no coincida con lo que responde la API, se cambia la pantalla. El contrato de cada endpoint está en `docs/frontend/specs/conexion-api-back.spec.md`; en esta guía se cita como "el spec".
 
@@ -38,7 +38,7 @@ Esta guía reorganiza el front y lo conecta con la API. Está repartida por pers
 |---|---|---|---|
 | 1 | Dante | Limpieza, estructura, sesión, rutas y pantallas de autenticación | Nada |
 | 2 | Dante (hecha) | Pantallas del nutriólogo | Parte 1 |
-| 3 | Fer | Pantallas del paciente | Parte 1 |
+| 3 | Dante (hecha) | Pantallas del paciente | Parte 1 |
 | 4 | Dante | Recetas, constructor del plan y reportes | Parte 1 |
 | 5 | Todos | Limpieza final y prueba completa | Partes 1 a 4 |
 
@@ -179,7 +179,7 @@ src/
 │   └── NotFoundPage.jsx
 ├── schemas/             Esquemas de Zod de los formularios
 ├── data/                Textos fijos de la landing y de auth
-├── mocks/               Datos de prueba, mientras se conecta la API (se borran al final)
+├── mocks/               Datos de prueba, mientras se conecta la API (ya se borraron en la Parte 3)
 ├── App.jsx              Las rutas, con <Routes> y <Route>, como en clase
 ├── main.jsx             BrowserRouter y providers
 └── index.css
@@ -1107,94 +1107,49 @@ Al desactivar a un paciente ya no puede iniciar sesión y deja de aparecer en la
 
 ---
 
-# Parte 3 — Fer: pantallas del paciente
+# Parte 3 — Pantallas del paciente (hecha)
+
+Esta parte ya está hecha (rama `feature/paciente/dante`). Con ella se borró `src/mocks/`: ninguna pantalla usa datos de prueba.
+
+**Decisiones:**
+
+| Tema | Decisión |
+|---|---|
+| Peso | El back junta el peso que registra el paciente y el que se anota en consulta (`weights` de `/dashboard/progress`, cada registro con su origen). La gráfica pinta cada punto del color de su origen y el historial muestra la diferencia contra el registro anterior |
+| Citas del paciente | Una tarjeta "Tu próxima cita" arriba del plan. Sin página propia |
+| Recordatorio | Si hoy no ha contestado el cuestionario, un aviso arriba del plan con "Contestar ahora" |
+| Perfil | Sus datos, su foto, su contraseña y una tarjeta "Mi nutriólogo" (`GET /auth/me/nutritionist`, endpoint nuevo) |
+| Cuestionarios del mock | Se quitaron: el back solo tiene la encuesta diaria |
+
+**Componentes compartidos con el nutriólogo:** para no repetir código, el chat (`components/chat/`), el perfil (`components/perfil/`), los documentos (`components/documentos/`) y la gráfica e historial de peso (`components/progreso/`) los usan los dos roles. Cuando hace falta, revisan `user.role`.
 
 ## Paso 3.1 — Plan alimenticio como receta y por horas
 
-Lo que pidió el profesor: **las comidas del día ordenadas por hora**, que la página **se ubique sola en la comida que toca según la hora**, y que cada comida **se vea como receta**.
+`pages/paciente/PacientePlanAlimenticioPage.jsx`, con los horarios fijos de `lib/meal-times.js`:
 
-Los horarios son fijos para todos los pacientes:
-
-Archivo: `src/lib/meal-times.js`
-
-```js
-export const MEAL_TIMES = [
-  { key: 'breakfast', label: 'Desayuno', start: '07:30', end: '08:30' },
-  { key: 'morning-snack', label: 'Colación matutina', start: '11:00', end: '11:30' },
-  { key: 'lunch', label: 'Comida', start: '14:00', end: '15:00' },
-  { key: 'afternoon-snack', label: 'Colación vespertina', start: '17:30', end: '18:00' },
-  { key: 'dinner', label: 'Cena', start: '20:30', end: '21:30' },
-]
-
-const toMinutes = (time) => {
-  const [hours, minutes] = time.split(':').map(Number)
-  return hours * 60 + minutes
-}
-
-// La comida que toca: la última que ya empezó o que empieza en menos de una hora
-export const getCurrentMealKey = (now = new Date()) => {
-  const minutesNow = now.getHours() * 60 + now.getMinutes()
-  let current = MEAL_TIMES[0].key
-
-  for (const meal of MEAL_TIMES) {
-    if (minutesNow >= toMinutes(meal.start) - 60) {
-      current = meal.key
-    }
-  }
-
-  return current
-}
-
-// El día de hoy como lo guarda el plan: 'monday' ... 'sunday'
-export const getTodayKey = (now = new Date()) => {
-  return ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()]
-}
-```
-
-La pantalla:
-
-1. **Datos:** `GET /meal-plans/active`. Si responde `404`, muestra un estado vacío ("Tu nutriólogo aún no te asigna un plan"), no un error.
-2. **Pestañas por día**, de lunes a domingo, con el día de hoy (`getTodayKey`) seleccionado. Los días sin comidas muestran un estado vacío.
-3. **Línea de tiempo del día:** una tarjeta por comida, en el orden de `MEAL_TIMES`, con la **hora grande a la izquierda** (`07:30 – 08:30`) y la comida a la derecha.
-4. **Ubicarse en la comida actual:** al cargar, haz scroll a la tarjeta de `getCurrentMealKey()` y resáltala con un borde. Cada tarjeta lleva `id={meal.mealTime}`:
-
-   ```js
-   useEffect(() => {
-     document.getElementById(getCurrentMealKey())?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-   }, [plan])
-   ```
-
-5. **Cada comida como receta:**
-   - Foto (`getImageUrl(meal.imageUrl)`; si no hay, un ícono) y título (`meal.title`).
-   - **Ingredientes** con su cantidad: `2 pieza · Tortilla de maíz`.
-   - **Pasos numerados** (`meal.steps`). Si la comida no tiene receta, muestra `meal.preparation`.
-   - Un botón **Ver equivalentes** en cada ingrediente, que abre un `Sheet` con los alimentos del mismo grupo: `GET /smae/foods?groupKey=`.
-6. **Arriba:** las metas del día (`targetKcal` y `waterLiters`); **abajo:** las recomendaciones (`notes`).
-
-`ExpedientePlanTab` del nutriólogo puede reutilizar el mismo componente de comida para el resumen.
+1. Arriba: la próxima cita (`ProximaCitaCard`), el aviso del cuestionario (`AvisoCuestionario`) y las metas del día (`targetKcal`, `waterLiters`).
+2. Pestañas de lunes a domingo; empieza en hoy (`getTodayKey`).
+3. Una tarjeta por comida (`ComidaCard`) en el orden de `MEAL_TIMES`, con la hora grande a la izquierda. Si ese día no tiene la comida, la tarjeta lo dice.
+4. Al cargar baja sola a la comida que toca (`getCurrentMealKey`) y la resalta con un borde y la etiqueta "Ahora". Cada tarjeta tiene `id={mealTime.key}`.
+5. Cada comida como receta: foto, ingredientes con su cantidad y pasos numerados (o `preparation` si no tiene receta).
+6. "Ver equivalentes" abre `EquivalentesSheet` con los alimentos del mismo grupo (`GET /smae/foods?groupKey=`).
+7. Abajo, las recomendaciones (`notes`). Si no hay plan (`404`), un estado vacío.
 
 ## Paso 3.2 — Cuestionario diario y cumplimiento
 
-El back guarda **una sola encuesta por día** con cinco respuestas (sección 5.5 del spec). Por eso:
-
-| Pantalla | Qué hace |
-|---|---|
-| **Cuestionario** (`/paciente/cuestionario`) | El formulario del día: ánimo (1 a 5), horas de sueño, vasos de agua, minutos de actividad y cuánto cumplió el plan (0 a 100%). Se manda una vez al día con `POST /wellness-surveys`. Si ya contestó hoy, se muestra como contestado (`409` si lo intenta otra vez) |
-| **Cumplimiento** (`/paciente/cumplimiento`) | Solo muestra resultados: el cumplimiento del plan por día, la racha de días seguidos con encuesta y el agua de hoy. Datos de `GET /wellness-surveys` |
-
-- La fecha se manda con `toDateInput()`, la fecha **local** del paciente.
-- Los cuestionarios psicológico y alimenticio que hoy están en el mock se quitan: el back no los tiene.
-- La lista de comidas con casillas de `PacienteCumplimiento` se quita o se cambia por la pregunta de cumplimiento del plan.
+- **Cuestionario** (`/paciente/cuestionario`, `PacienteCuestionarioPage`): ánimo (cinco botones), horas de sueño, vasos de agua, minutos de actividad, cumplimiento del plan (`Slider` de 0 a 100) y un comentario opcional. La fecha se manda con `toDateInput()`. Si ya contestó hoy, muestra sus respuestas; si el back responde `409`, también.
+- **Cumplimiento** (`PacienteCumplimientoPage`): solo resultados: racha de días seguidos, promedio de la semana, agua y plan de hoy, los últimos 7 días y una gráfica de los últimos 14 cuestionarios.
+- Las ayudas están en `lib/surveys.js` (`MOODS`, `findTodaySurvey`, `getStreak`).
 
 ## Paso 3.3 — Progreso y documentos
 
-- **Progreso:** `GET /dashboard/progress` trae las gráficas y las metas (`goals`): peso inicial, actual y meta, y el porcentaje de avance. El paciente registra sus mediciones con `POST /measurements`. Al editar, `PUT /measurements/:id` necesita **todos** los campos, incluida la fecha.
-- **Documentos** (página nueva): lista, subida con `FormData` (campo `file`), descarga como en el paso 2.5, y borrar los que subió el paciente, con `ConfirmDialog`. También ve, sin poder borrarlos, los que subió el nutriólogo.
+- **Progreso** (`PacienteProgresoPage`): metas (`goals`), gráfica y historial de peso, y "Mis mediciones" para registrar, editar o borrar (`MedicionModal`). Al editar se manda la medición completa, con la fecha.
+- **Documentos** (`/paciente/documentos`): el mismo `DocumentosLaboratorio` del expediente, sin `patientId`. Ve también los que subió su nutriólogo, pero solo puede borrar los suyos.
 
 ## Paso 3.4 — Chat y perfil
 
-- **Chat:** `GET /messages` (sin parámetros), `POST /messages` solo con `body` y `subject`, y `PUT /messages/read` al abrir. Se recarga al entrar y después de enviar.
-- **Perfil** (página nueva): nombre, apellidos, teléfono y foto, con `PUT /auth/me` y `POST /auth/me/avatar`, y cambio de contraseña.
+- **Mensajes** (`PacienteChatPage`): una sola conversación con su nutriólogo, con `ChatVentanaConversacion` (`myRole="patient"`). Se recarga al entrar, al enviar y con el botón de actualizar. El menú muestra los mensajes sin leer.
+- **Perfil** (`/paciente/perfil`): los mismos componentes del perfil del nutriólogo; el paciente solo edita su nombre y su teléfono. Abajo, "Mi nutriólogo".
 
 ---
 
@@ -1239,7 +1194,7 @@ Al asignar una receta, se **copian** al plan su nombre (`title`), su id (`recipe
 
 ## Paso 5.1 — Limpieza
 
-- [ ] Borrar la carpeta `src/mocks/`, y que ningún import la use.
+- [x] Borrar la carpeta `src/mocks/`, y que ningún import la use (se hizo en la Parte 3).
 - [ ] Buscar que no quede ningún aviso del navegador: `grep -rnE "alert\(|confirm\(|prompt\(" src --exclude-dir=ui` no debe encontrar nada.
 - [ ] Actualizar `docs/frontend/README.md` con la estructura nueva, y revisar que `AGENTS.md` y `docs/backend/README.md` sigan siendo ciertos.
 - [ ] `pnpm lint` y `pnpm build` sin errores.

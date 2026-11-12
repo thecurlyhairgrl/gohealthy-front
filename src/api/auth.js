@@ -12,6 +12,11 @@ export function getMeRequest() {
     return apiFetch('/auth/me')
 }
 
+// Datos públicos del nutriólogo (solo paciente)
+export function getMyNutritionistRequest() {
+  return apiFetch('/auth/me/nutritionist')
+}
+
 export function updateMeRequest(userData) {
     return apiFetch('/auth/me', { method: 'PUT', body: userData })
 }
