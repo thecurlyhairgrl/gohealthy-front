@@ -10,17 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    host: true,
-    port: 5173,
-    watch: {
-      /*
-        Los bind mounts de Podman en Windows/WSL2 no siempre emiten eventos 
-        nativos de FS de forma confiable (se han visto crashes tipo EIO); 
-        el polling evita que el watcher se caiga.
-      */
-      usePolling: true,
-      interval: 300,
-    },
+    port: 5173
   },
   resolve: {
     alias: {

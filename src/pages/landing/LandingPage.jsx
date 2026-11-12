@@ -1,12 +1,12 @@
-import { LandingHeader } from '@/features/landing/components/LandingHeader'
-import { LandingHero } from '@/features/landing/components/LandingHero'
-import { LandingBanner } from '@/features/landing/components/LandingBanner'
-import { LandingFeatures } from '@/features/landing/components/LandingFeatures'
-import { LandingVideoSection } from '@/features/landing/components/LandingVideoSection'
-import { LandingHighlightCards } from '@/features/landing/components/LandingHighlightCards'
-import { LandingFooter } from '@/features/landing/components/LandingFooter'
+import { LandingHeader } from '@/components/landing/LandingHeader'
+import { LandingHero } from '@/components/landing/LandingHero'
+import { LandingBanner } from '@/components/landing/LandingBanner'
+import { LandingFeatures } from '@/components/landing/LandingFeatures'
+import { LandingVideoSection } from '@/components/landing/LandingVideoSection'
+import { LandingHighlightCards } from '@/components/landing/LandingHighlightCards'
+import { LandingFooter } from '@/components/landing/LandingFooter'
 
-export default function LandingPage() {
+function LandingPage() {
   return (
     <>
       <LandingHeader />
@@ -19,3 +19,5 @@ export default function LandingPage() {
     </>
   )
 }
+
+export default LandingPage

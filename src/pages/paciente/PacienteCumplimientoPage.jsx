@@ -1,5 +1,5 @@
-import PacienteCumplimiento from '@/features/paciente/components/PacienteCumplimiento'
-import { cumplimientoPacienteMock } from '@/features/paciente/data/mock-data'
+import PacienteCumplimiento from '@/components/paciente/PacienteCumplimiento'
+import { cumplimientoPacienteMock } from '@/mocks/paciente'
 
 /**
  * Página de Cumplimiento de Actividades del Paciente (/paciente/cumplimiento).

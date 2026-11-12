@@ -1,5 +1,4 @@
 # Go Healthy
-<div align="right">
   <sub>by: Core Development</sub>
 </div>
 

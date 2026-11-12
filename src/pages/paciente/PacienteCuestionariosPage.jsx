@@ -1,5 +1,5 @@
-import PacienteCuestionarios from '@/features/paciente/components/PacienteCuestionarios'
-import { cuestionariosPacienteMock } from '@/features/paciente/data/mock-data'
+import PacienteCuestionarios from '@/components/paciente/PacienteCuestionarios'
+import { cuestionariosPacienteMock } from '@/mocks/paciente'
 
 /**
  * Página de Cuestionarios del Paciente (/paciente/cuestionarios).
